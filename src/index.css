@@ -1,11 +1,154 @@
 @import "tailwindcss";
 
-@theme {
-  --font-sans: "Inter", system-ui, sans-serif;
+/* ───────────── Tokens semânticos (trocados por tema/acento) ───────────── */
+@theme inline {
+  --font-display: "Cinzel", "Trajan Pro", Georgia, serif;
+  --font-fancy: "Cinzel Decorative", "Cinzel", Georgia, serif;
+  --font-body: "Alegreya", Georgia, "Times New Roman", serif;
+
+  --color-bg: var(--c-bg);
+  --color-surface: var(--c-surface);
+  --color-surface2: var(--c-surface2);
+  --color-line: var(--c-line);
+  --color-ink: var(--c-ink);
+  --color-dim: var(--c-dim);
+  --color-accent: var(--c-accent);
+  --color-accent2: var(--c-accent2);
+  --color-on-accent: var(--c-on-accent);
+  --color-good: #4fbf7f;
+  --color-bad: #e2554d;
+  --color-mana: #6fa8ff;
 }
 
-@layer base {
-  body {
-    @apply antialiased;
-  }
+/* Temas de fundo — todos escuros, exceto Pergaminho */
+:root, [data-theme="crypt"] {
+  --c-bg: #0a0807; --c-surface: #15110e; --c-surface2: #1e1813; --c-line: #362b21;
+  --c-ink: #ece0c6; --c-dim: #9c8c73; --glow-bg: 30 20 12;
 }
+[data-theme="tavern"] {
+  --c-bg: #120b07; --c-surface: #1e130c; --c-surface2: #2a1a10; --c-line: #4a2f1c;
+  --c-ink: #f0dfc0; --c-dim: #ab9070; --glow-bg: 60 30 10;
+}
+[data-theme="forest"] {
+  --c-bg: #060b08; --c-surface: #0d1711; --c-surface2: #142219; --c-line: #24402f;
+  --c-ink: #dfe9d3; --c-dim: #86a08a; --glow-bg: 10 40 20;
+}
+[data-theme="cathedral"] {
+  --c-bg: #07080f; --c-surface: #0f1220; --c-surface2: #171b30; --c-line: #2a3050;
+  --c-ink: #dfe3f5; --c-dim: #8b93b8; --glow-bg: 20 25 60;
+}
+[data-theme="parchment"] {
+  --c-bg: #e8d9b5; --c-surface: #f3e8cb; --c-surface2: #ecdcb6; --c-line: #b9a37a;
+  --c-ink: #2b1d10; --c-dim: #6b5638; --glow-bg: 255 240 200;
+}
+
+/* Cores de destaque */
+:root, [data-accent="gold"]   { --c-accent: #d9a441; --c-accent2: #f2cf7a; --c-on-accent: #1a1206; --glow: 217 164 65; }
+[data-accent="crimson"]       { --c-accent: #d4453f; --c-accent2: #f08a80; --c-on-accent: #fff1ec; --glow: 212 69 63; }
+[data-accent="emerald"]       { --c-accent: #3fb37a; --c-accent2: #8ce3b4; --c-on-accent: #04170d; --glow: 63 179 122; }
+[data-accent="arcane"]        { --c-accent: #9b6bff; --c-accent2: #c9b0ff; --c-on-accent: #10062b; --glow: 155 107 255; }
+[data-accent="frost"]         { --c-accent: #55b8e8; --c-accent2: #a8e0ff; --c-on-accent: #04141e; --glow: 85 184 232; }
+[data-accent="ember"]         { --c-accent: #ee7a2b; --c-accent2: #ffb676; --c-on-accent: #1e0b00; --glow: 238 122 43; }
+
+html { font-size: calc(16px * var(--font-scale, 1)); }
+body {
+  background: var(--c-bg);
+  color: var(--c-ink);
+  font-family: var(--font-body);
+  font-size: 1.05rem;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+h1, h2, h3, h4, .font-display { font-family: var(--font-display); letter-spacing: 0.02em; }
+button { font-family: var(--font-display); cursor: pointer; }
+button:disabled { cursor: not-allowed; }
+::selection { background: color-mix(in oklab, var(--c-accent) 40%, transparent); }
+* { scrollbar-width: thin; scrollbar-color: var(--c-line) transparent; }
+
+/* ───────────── Utilidades medievais ───────────── */
+.panel {
+  background:
+    linear-gradient(180deg, color-mix(in oklab, var(--c-surface2) 60%, transparent), transparent 40%),
+    var(--c-surface);
+  border: 1px solid var(--c-line);
+  border-radius: 1rem;
+  box-shadow: inset 0 1px 0 color-mix(in oklab, var(--c-ink) 6%, transparent), 0 10px 30px -12px rgb(0 0 0 / .7);
+}
+.panel-gold {
+  border-color: color-mix(in oklab, var(--c-accent) 55%, var(--c-line));
+  box-shadow: inset 0 1px 0 color-mix(in oklab, var(--c-accent2) 25%, transparent),
+              0 0 0 1px color-mix(in oklab, var(--c-accent) 15%, transparent),
+              0 12px 40px -14px rgb(var(--glow) / .35);
+}
+.text-gold-grad {
+  background: linear-gradient(180deg, var(--c-accent2), var(--c-accent) 60%, color-mix(in oklab, var(--c-accent) 60%, black));
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+.btn-primary {
+  background: linear-gradient(180deg, var(--c-accent2), var(--c-accent));
+  color: var(--c-on-accent);
+  border-bottom: 4px solid color-mix(in oklab, var(--c-accent) 55%, black);
+  box-shadow: 0 8px 22px -8px rgb(var(--glow) / .55), inset 0 1px 0 rgb(255 255 255 / .35);
+}
+.btn-primary:active:not(:disabled) { transform: translateY(3px); border-bottom-width: 1px; }
+.btn-primary:disabled { filter: grayscale(1) brightness(.6); box-shadow: none; }
+.btn-ghost {
+  background: color-mix(in oklab, var(--c-surface2) 80%, transparent);
+  border: 1px solid var(--c-line); color: var(--c-ink);
+}
+.btn-ghost:hover:not(:disabled) { border-color: var(--c-accent); color: var(--c-accent2); }
+.btn-danger {
+  background: linear-gradient(180deg, #f0716a, #c93a34); color: #fff;
+  border-bottom: 4px solid #7d1f1b; box-shadow: 0 8px 22px -8px rgb(226 85 77 / .55);
+}
+
+/* Vinheta + grão + tocha */
+.vignette {
+  position: fixed; inset: 0; pointer-events: none; z-index: 40;
+  background: radial-gradient(ellipse at 50% 40%, transparent 45%, rgb(0 0 0 / .5) 100%);
+}
+[data-theme="parchment"] .vignette { background: radial-gradient(ellipse at 50% 40%, transparent 50%, rgb(90 55 10 / .35) 100%); }
+.grain {
+  position: fixed; inset: 0; pointer-events: none; z-index: 41; opacity: .07; mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+}
+.torch-glow {
+  position: fixed; pointer-events: none; z-index: 1; width: 60vmax; height: 60vmax; border-radius: 50%;
+  background: radial-gradient(circle, rgb(var(--glow) / .14), transparent 60%);
+  animation: torch 3.4s ease-in-out infinite;
+}
+
+/* ───────────── Keyframes ───────────── */
+@keyframes torch { 0%,100% { opacity: .75; transform: scale(1) } 30% { opacity: 1; transform: scale(1.06) } 60% { opacity: .85; transform: scale(.97) } }
+@keyframes floaty { 0%,100% { transform: translateY(0) } 50% { transform: translateY(-6px) } }
+@keyframes breathe { 0%,100% { transform: scaleY(1) } 50% { transform: scaleY(1.025) } }
+@keyframes blink { 0%,92%,100% { transform: scaleY(1) } 95% { transform: scaleY(.1) } }
+@keyframes shake { 0%,100% { transform: translateX(0) } 15% { transform: translateX(-9px) rotate(-1deg) } 35% { transform: translateX(8px) rotate(1deg) } 55% { transform: translateX(-5px) } 75% { transform: translateX(4px) } }
+@keyframes glowpulse { 0%,100% { filter: drop-shadow(0 0 4px rgb(var(--glow) / .5)) } 50% { filter: drop-shadow(0 0 14px rgb(var(--glow) / .95)) } }
+@keyframes twinkle { 0%,100% { opacity: .25 } 50% { opacity: 1 } }
+@keyframes drift { from { transform: translateX(-20%) } to { transform: translateX(120vw) } }
+@keyframes shine { from { background-position: -200% 0 } to { background-position: 200% 0 } }
+@keyframes flame { 0%,100% { transform: scale(1,1) rotate(-2deg) } 50% { transform: scale(.92,1.1) rotate(2deg) } }
+@keyframes wobble { 0%,100% { transform: rotate(-3deg) } 50% { transform: rotate(3deg) } }
+@keyframes rise { from { transform: translateY(0); opacity: 1 } to { transform: translateY(-60px); opacity: 0 } }
+
+.anim-float { animation: floaty 3.2s ease-in-out infinite; }
+.anim-breathe { animation: breathe 3s ease-in-out infinite; transform-box: fill-box; transform-origin: 50% 100%; }
+.anim-blink { animation: blink 4.5s infinite; transform-box: fill-box; transform-origin: center; }
+.anim-shake { animation: shake .5s ease-in-out; }
+.anim-glow { animation: glowpulse 2.4s ease-in-out infinite; }
+.anim-twinkle { animation: twinkle 3s ease-in-out infinite; }
+.anim-flame { animation: flame .6s ease-in-out infinite; transform-box: fill-box; transform-origin: 50% 100%; }
+.anim-wobble { animation: wobble 2.8s ease-in-out infinite; transform-box: fill-box; transform-origin: 50% 90%; }
+.shine-text {
+  background: linear-gradient(90deg, var(--c-accent) 20%, #fff8 50%, var(--c-accent) 80%);
+  background-size: 200% 100%; -webkit-background-clip: text; background-clip: text; color: transparent;
+  animation: shine 4s linear infinite;
+}
+
+/* Controle de movimento (Personalização → Movimento) */
+[data-motion="off"] *, [data-motion="off"] *::before, [data-motion="off"] *::after {
+  animation: none !important; transition: none !important; scroll-behavior: auto !important;
+}
+[data-motion="reduced"] .anim-float, [data-motion="reduced"] .anim-breathe, [data-motion="reduced"] .anim-wobble,
+[data-motion="reduced"] .anim-twinkle, [data-motion="reduced"] .torch-glow { animation-duration: 9s; }
