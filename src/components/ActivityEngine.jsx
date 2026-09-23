@@ -1,11 +1,23 @@
-import React, { useState } from 'react';
-import { motion } from 'framer-motion';
+import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useAppStore } from '../store/useAppStore';
 
 export default function ActivityEngine({ activity, onComplete }) {
   const [selectedOption, setSelectedOption] = useState(null);
   const [isCorrect, setIsCorrect] = useState(null);
-  const { language, theme, primaryColor, addCoins } = useAppStore();
+  const { language, addCoins } = useAppStore();
+
+  // Para o tipo match_pairs
+  const [selectedPair, setSelectedPair] = useState([]);
+  const [matchedPairs, setMatchedPairs] = useState([]);
+
+  // Reseta estado local caso a atividade mude
+  useEffect(() => {
+    setSelectedOption(null);
+    setIsCorrect(null);
+    setSelectedPair([]);
+    setMatchedPairs([]);
+  }, [activity]);
 
   const handleVerify = () => {
     if (!selectedOption) return;
@@ -14,7 +26,7 @@ export default function ActivityEngine({ activity, onComplete }) {
       setIsCorrect(true);
       addCoins(activity.reward || 10);
       setTimeout(() => {
-        onComplete(true); // Sucesso
+        onComplete(true);
       }, 1500);
     } else {
       setIsCorrect(false);
@@ -25,55 +37,132 @@ export default function ActivityEngine({ activity, onComplete }) {
     }
   };
 
+  const handleMatchSelect = (item) => {
+    if (matchedPairs.includes(item)) return;
+
+    const newPair = [...selectedPair, item];
+    setSelectedPair(newPair);
+
+    if (newPair.length === 2) {
+      // Verificar se o par está correto consultando pairs dict
+      const [first, second] = newPair;
+      const isMatch = activity.pairs[first] === second || activity.pairs[second] === first;
+
+      if (isMatch) {
+        setMatchedPairs([...matchedPairs, first, second]);
+        setSelectedPair([]);
+        
+        // Verifica se terminou todos os pares
+        if (matchedPairs.length + 2 === activity.items.length) {
+          setIsCorrect(true);
+          addCoins(activity.reward || 15);
+          setTimeout(() => onComplete(true), 1500);
+        }
+      } else {
+        // Errou o par
+        setTimeout(() => setSelectedPair([]), 800);
+      }
+    }
+  };
+
   const questionText = activity.question[language] || activity.question['pt'];
 
   return (
-    <div className={`p-6 rounded-sm shadow-2xl border-4 ${theme === 'dark' ? 'bg-stone-800 border-stone-600 text-stone-200' : 'bg-amber-50 border-amber-900 text-amber-950 font-serif'}`}>
-      <h3 className="text-2xl font-bold mb-6 text-center border-b-2 border-dotted border-current pb-2">{questionText}</h3>
-
-      {activity.type === 'multiple_choice' || activity.type === 'true_false' ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {activity.options.map((option, idx) => (
-            <button
-              key={idx}
-              onClick={() => setSelectedOption(option)}
-              className={`p-4 rounded-lg text-lg font-medium transition-all border-2
-                ${selectedOption === option 
-                  ? `border-${primaryColor}-500 bg-${primaryColor}-100 dark:bg-${primaryColor}-900` 
-                  : `border-gray-200 dark:border-gray-600 hover:border-${primaryColor}-300`}
-                ${isCorrect === true && selectedOption === option ? 'bg-green-500 text-white border-green-600' : ''}
-                ${isCorrect === false && selectedOption === option ? 'bg-red-500 text-white border-red-600' : ''}
-              `}
-              disabled={isCorrect !== null}
-            >
-              {option}
-            </button>
-          ))}
-        </div>
-      ) : null}
-
-      <div className="mt-8 flex justify-center">
-        <button
-          onClick={handleVerify}
-          disabled={!selectedOption || isCorrect !== null}
-          className={`px-8 py-3 rounded-full text-xl font-bold text-white transition-transform transform hover:scale-105
-            ${!selectedOption ? 'bg-gray-400 cursor-not-allowed' : `bg-${primaryColor}-500 hover:bg-${primaryColor}-600`}
-          `}
-        >
-          Verificar
-        </button>
+    <motion.div 
+      initial={{ scale: 0.95, opacity: 0 }}
+      animate={{ scale: 1, opacity: 1 }}
+      className="bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl overflow-hidden flex flex-col"
+    >
+      <div className="p-6 bg-slate-800/50 border-b border-slate-800">
+        <h3 className="text-xl md:text-2xl font-black text-slate-100 text-center leading-relaxed">
+          {questionText}
+        </h3>
       </div>
 
-      {isCorrect === true && (
-        <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="mt-4 text-center text-green-500 font-bold text-xl">
-          Correto! +{activity.reward} moedas
-        </motion.div>
-      )}
-      {isCorrect === false && (
-        <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="mt-4 text-center text-red-500 font-bold text-xl">
-          Incorreto. Tente novamente!
-        </motion.div>
-      )}
-    </div>
+      <div className="p-6">
+        {/* Renderiza Múltipla Escolha e V/F */}
+        {(activity.type === 'multiple_choice' || activity.type === 'true_false') && (
+          <div className="grid grid-cols-1 gap-3">
+            {activity.options.map((option, idx) => (
+              <motion.button
+                whileHover={isCorrect === null ? { scale: 1.01 } : {}}
+                whileTap={isCorrect === null ? { scale: 0.98 } : {}}
+                key={idx}
+                onClick={() => setSelectedOption(option)}
+                className={`p-4 rounded-2xl text-left font-bold text-lg transition-all border-b-4 
+                  ${selectedOption === option 
+                    ? `border-amber-600 bg-amber-900/30 text-amber-400 ring-2 ring-amber-500` 
+                    : `border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-700`}
+                  ${isCorrect === true && selectedOption === option ? 'bg-emerald-900/40 text-emerald-400 border-emerald-600 ring-emerald-500' : ''}
+                  ${isCorrect === false && selectedOption === option ? 'bg-rose-900/40 text-rose-400 border-rose-600 ring-rose-500' : ''}
+                `}
+                disabled={isCorrect !== null}
+              >
+                {option}
+              </motion.button>
+            ))}
+          </div>
+        )}
+
+        {/* Renderiza Combinar Pares */}
+        {activity.type === 'match_pairs' && (
+          <div className="grid grid-cols-2 gap-3">
+            {activity.items.map((item, idx) => {
+              const isSelected = selectedPair.includes(item);
+              const isMatched = matchedPairs.includes(item);
+              return (
+                <motion.button
+                  whileTap={!isMatched ? { scale: 0.95 } : {}}
+                  key={idx}
+                  onClick={() => handleMatchSelect(item)}
+                  className={`p-4 rounded-2xl text-center font-bold text-sm md:text-base transition-all border-b-4 h-24 flex items-center justify-center
+                    ${isMatched ? 'border-slate-800 bg-slate-800 text-slate-600 opacity-50 cursor-not-allowed shadow-inner' :
+                      isSelected ? 'border-amber-600 bg-amber-900/30 text-amber-400 ring-2 ring-amber-500' :
+                      'border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-700'
+                    }
+                  `}
+                  disabled={isMatched || isCorrect !== null}
+                >
+                  {item}
+                </motion.button>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Botão Verificar (Apenas para múltipla escolha) */}
+        {(activity.type === 'multiple_choice' || activity.type === 'true_false') && (
+          <div className="mt-8">
+            <motion.button
+              whileTap={selectedOption && isCorrect === null ? { scale: 0.95 } : {}}
+              onClick={handleVerify}
+              disabled={!selectedOption || isCorrect !== null}
+              className={`w-full py-4 rounded-2xl text-lg font-black uppercase tracking-wide border-b-4 transition-colors
+                ${!selectedOption 
+                  ? 'bg-slate-800 border-slate-700 text-slate-600 cursor-not-allowed' 
+                  : 'bg-amber-500 border-amber-700 text-slate-900 hover:bg-amber-400'}
+              `}
+            >
+              Lançar Magia
+            </motion.button>
+          </div>
+        )}
+
+        <div className="h-12 mt-4 flex items-center justify-center">
+          <AnimatePresence mode="wait">
+            {isCorrect === true && (
+              <motion.div key="correct" initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ opacity: 0 }} className="text-emerald-400 font-black text-lg">
+                Feitiço Correto! +{activity.reward} ouro
+              </motion.div>
+            )}
+            {isCorrect === false && (
+              <motion.div key="wrong" initial={{ x: -10, opacity: 0 }} animate={{ x: [0, -5, 5, -5, 5, 0], opacity: 1 }} exit={{ opacity: 0 }} className="text-rose-400 font-black text-lg">
+                Magia Falhou. Tente novamente!
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      </div>
+    </motion.div>
   );
 }
