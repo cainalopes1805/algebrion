@@ -1,7 +1,8 @@
 // Arte do mapa medieval: terreno, moldura, rosa dos ventos e os marcos de cada região (tudo SVG, sem imagens).
-import { MAP_H } from '../data/mapGeometry';
+import { MAP_H, ZERO } from '../data/mapGeometry';
 
 export const INK = '#8f7d58';
+export const SEA_W = 46; // largura do mar em cada lado
 
 /* ───────────── Terreno ───────────── */
 export function Decor({ d }) {
@@ -11,9 +12,12 @@ export function Decor({ d }) {
     case 'mountain':
       return (
         <g transform={g.transform}>
-          <path d="M-26 0 L-8 -36 L2 -18 L14 -44 L36 0Z" fill="#40392a" stroke={INK} strokeWidth=".8" />
-          <path d="M14 -44 L36 0 L20 0 L12 -22Z" fill="#000" opacity=".22" />
-          <path d="M14 -44 l-6 12 l5 -3 l3 5 l4 -6z M-8 -36 l-5 10 l5 -3 l4 4z" fill="#c9c5b0" opacity=".85" />
+          <ellipse cx="4" cy="2" rx="34" ry="5" fill="#000" opacity=".28" />
+          <path d="M-26 0 L-8 -36 L2 -18 L14 -44 L36 0Z" fill="#40392a" stroke={INK} strokeWidth=".8" strokeLinejoin="round" />
+          <path d="M-8 -36 L-2 0 L-26 0Z" fill="#584d38" opacity=".7" />
+          <path d="M14 -44 L36 0 L20 0 L12 -22Z" fill="#000" opacity=".26" />
+          <path d="M14 -44 l-6 12 l5 -3 l3 5 l4 -6z M-8 -36 l-5 10 l5 -3 l4 4z" fill="#c9c5b0" opacity=".9" />
+          <path d="M-2 -8 l3 8 M6 -12 l4 12 M22 -14 l3 8 M-16 -10 l-2 8 M28 -6 l-3 6" stroke={INK} strokeWidth=".6" opacity=".7" fill="none" />
         </g>
       );
     case 'forest':
@@ -21,28 +25,116 @@ export function Decor({ d }) {
         <g transform={g.transform}>
           {[[-14, 0], [0, -4], [14, 0], [-6, 8], [8, 8]].slice(0, 3 + (d.v % 3)).map(([x, y], i) => (
             <g key={i} transform={`translate(${x} ${y})`}>
+              <ellipse cx="1" cy="4" rx="9" ry="2.4" fill="#000" opacity=".3" />
               <rect x="-1.5" y="-2" width="3" height="6" fill="#1b140c" />
-              <path d="M0 -26 L-9 -12 h4 L-11 0 h22 L5 -12 h4z" fill="#2c4032" stroke="#1a2a20" strokeWidth=".7" />
+              {d.dead ? (
+                <g fill="none" stroke="#2a2118" strokeLinecap="round"><path d="M0 4 V-15" strokeWidth="1.8" /><path d="M0 -5 L-6 -12 M0 -8 L6 -15 M0 -11 L-3 -19 M-6 -12 l-2 -3 M6 -15 l2 -3" strokeWidth="1.1" /></g>
+              ) : (d.v + i) % 3 === 0 ? (
+                <g><circle cy="-13" r="10" fill="#38553a" stroke="#1a2a20" strokeWidth=".7" /><circle cx="-4" cy="-16" r="4" fill="#4d7048" opacity=".7" /><circle cx="4" cy="-11" r="3" fill="#25392a" opacity=".6" /></g>
+              ) : (
+                <g><path d="M0 -26 L-9 -12 h4 L-11 0 h22 L5 -12 h4z" fill="#2c4032" stroke="#1a2a20" strokeWidth=".7" strokeLinejoin="round" /><path d="M0 -26 L9 -12 h-4 L11 0 h-9z" fill="#000" opacity=".22" /></g>
+              )}
             </g>
           ))}
         </g>
       );
+    case 'deadtree':
+      return (
+        <g transform={g.transform}>
+          <ellipse cy="2" rx="7" ry="1.8" fill="#000" opacity=".3" />
+          <g fill="none" stroke="#2a2118" strokeLinecap="round"><path d="M0 2 V-18" strokeWidth="2" /><path d="M0 -6 L-7 -13 M0 -10 L7 -17 M0 -14 L-4 -22 M-7 -13 l-3 -2 M7 -17 l3 -3" strokeWidth="1.2" /></g>
+        </g>
+      );
+    case 'ash':
+      return <ellipse transform={g.transform} rx="10" ry="4" fill="#0e0a07" opacity=".42" />;
+    case 'pine':
+      if (d.dead) {
+        return (
+          <g transform={g.transform}>
+            <ellipse cy="2" rx="7" ry="1.8" fill="#000" opacity=".3" />
+            <g fill="none" stroke="#2a2118" strokeLinecap="round"><path d="M0 2 V-24" strokeWidth="1.8" /><path d="M0 -8 L-5 -13 M0 -12 L5 -17 M0 -17 L-4 -21 M0 -20 L3 -24" strokeWidth="1" /></g>
+          </g>
+        );
+      }
+      return (
+        <g transform={g.transform}>
+          <ellipse cy="2" rx="8" ry="2" fill="#000" opacity=".3" />
+          <rect x="-1.2" y="-4" width="2.4" height="6" fill="#1b140c" />
+          <path d="M0 -30 L-8 -16 h4 L-10 -6 h20 L4 -16 h4z" fill="#2a4038" stroke="#16241f" strokeWidth=".6" strokeLinejoin="round" />
+          <path d="M0 -30 l-4 8 h8z M-5 -16 l-2 4 h4z M5 -16 l2 4 h-4z" fill="#dfe6e2" opacity=".85" />
+        </g>
+      );
     case 'hill':
-      return <path transform={g.transform} d="M-20 0 q20 -24 40 0" fill="#302a1c" stroke={INK} strokeWidth=".7" opacity=".8" />;
+      return (
+        <g transform={g.transform} opacity=".85">
+          <path d="M-20 0 q20 -24 40 0z" fill="#332d1e" stroke={INK} strokeWidth=".7" />
+          <path d="M-12 -4 q4 -8 10 -10 M-6 -2 l2 -6 M2 -3 l2 -8 M8 -2 l2 -5" stroke={INK} strokeWidth=".55" fill="none" opacity=".7" />
+        </g>
+      );
+    case 'tuft':
+      return <path transform={g.transform} d="M-4 0 l1 -5 l1.5 4 l1.5 -6 l1.5 6 l1.5 -4 l1 5" stroke="#5f7a48" strokeWidth=".9" fill="none" strokeLinecap="round" opacity=".75" />;
+    case 'rock':
+      return (
+        <g transform={g.transform}>
+          <path d="M-7 0 L-5 -6 L0 -8 L6 -5 L7 0z" fill="#5d574a" stroke="#2a251c" strokeWidth=".6" />
+          <path d="M0 -8 L6 -5 L7 0 L1 0z" fill="#000" opacity=".25" /><path d="M-5 -6 L0 -8 L-1 -4z" fill="#a39d88" opacity=".6" />
+        </g>
+      );
+    case 'bush':
+      return (
+        <g transform={g.transform}>
+          <ellipse cx="0" cy="1" rx="9" ry="2" fill="#000" opacity=".28" />
+          <circle cx="-4" cy="-3" r="4.5" fill="#3d5a3a" /><circle cx="3" cy="-4" r="5" fill="#46663f" /><circle cx="7" cy="-1.5" r="3.2" fill="#345034" />
+          {d.v === 0 && <g fill="#c94a4a"><circle cx="-2" cy="-4" r=".9" /><circle cx="4" cy="-6" r=".9" /><circle cx="6" cy="-2" r=".9" /></g>}
+        </g>
+      );
+    case 'flowers':
+      return (
+        <g transform={g.transform}>
+          {[[-6, 0], [0, -3], [6, 1], [2, 3]].map(([x, y], i) => (
+            <g key={i}><path d={`M${x} ${y} v4`} stroke="#4c6b3a" strokeWidth=".7" /><circle cx={x} cy={y} r="1.5" fill={['#e0b84a', '#d98aa8', '#e8e0c8', '#9c8ad6'][(d.v + i) % 4]} /></g>
+          ))}
+        </g>
+      );
+    case 'windmill':
+      return (
+        <g transform={g.transform}>
+          <ellipse cy="2" rx="14" ry="3" fill="#000" opacity=".3" />
+          <path d="M-8 0 L-5 -24 h10 L8 0z" fill="#6f5a3e" stroke="#2a1d10" strokeWidth=".7" />
+          <path d="M-7 -24 L0 -32 L7 -24z" fill="#7a3a30" stroke="#2a1d10" strokeWidth=".6" />
+          <rect x="-2" y="-8" width="4" height="8" rx="2" fill="#1a1008" />
+          <circle cy="-22" r="2.2" fill="#3a2a18" />
+          {d.broken && <path d="M0 0 L-2.6 -12 L2.6 -12z M0 0 L12 -2.6 L12 2.6z" transform="translate(0 -22) rotate(-24)" fill="#8f8462" stroke="#2a1d10" strokeWidth=".4" />}
+        </g>
+      );
     case 'lake':
       return (
         <g transform={g.transform} opacity=".95">
+          <ellipse cx="0" cy="0" rx="48" ry="23" fill="#3a5a4a" opacity=".5" />
           <ellipse cx="0" cy="0" rx="44" ry="20" fill="#1f3a44" stroke="#33606b" strokeWidth="1.2" />
-          <path d="M-20 -4 q6 -3 12 0 M0 4 q7 -3 14 0 M12 -7 q6 -3 12 0" stroke="#6fa3b0" strokeWidth=".8" fill="none" opacity=".6" />
+          <ellipse cx="-6" cy="-5" rx="30" ry="10" fill="#2a5060" opacity=".55" />
+          <path d="M-20 -4 q6 -3 12 0 M0 4 q7 -3 14 0 M12 -7 q6 -3 12 0 M-30 6 q5 -2 10 0" stroke="#6fa3b0" strokeWidth=".8" fill="none" opacity=".6" />
+          <path d="M-46 8 v-9 M-43 9 v-11 M46 -6 v-9 M49 -4 v-8" stroke="#5f7a48" strokeWidth="1" strokeLinecap="round" />
         </g>
       );
     case 'house':
+      if (d.burnt) {
+        return (
+          <g transform={g.transform}>
+            <rect x="-8" y="-6" width="16" height="6" fill="#2b221a" stroke="#120c07" strokeWidth=".6" />
+            <path d="M-8 -6 V-11 L-5 -8 M8 -6 V-13 L5 -9" stroke="#1a130c" strokeWidth="1.6" fill="none" />
+            <path d="M-11 -9 L-4 -14 L-1 -9 Z M2 -8 L8 -12 L11 -8 Z" fill="#3a2a20" stroke="#120c07" strokeWidth=".6" />
+            <path d="M-3 -3 l2 -6 M4 -2 l-1 -7" stroke="#0f0a06" strokeWidth="1.2" />
+            <rect x="-2" y="-4" width="4" height="4" fill="#0d0805" />
+          </g>
+        );
+      }
       return (
         <g transform={g.transform}>
           <rect x="-8" y="-10" width="16" height="10" fill="#5a4630" stroke="#2a1d10" strokeWidth=".6" />
           <path d="M-11 -10 L0 -20 L11 -10z" fill="#7a3a30" />
           <rect x="-2" y="-6" width="4" height="6" fill="#1a1008" />
-          <rect x="3.5" y="-8.5" width="3" height="3" fill="#ffcf6a" opacity=".85" />
+          <rect x="3.5" y="-8.5" width="3" height="3" fill="#d8b25a" opacity=".55" />
         </g>
       );
     case 'ruin':
@@ -57,7 +149,7 @@ export function Decor({ d }) {
         <g transform={g.transform}>
           <path d="M-12 0 L0 -18 L12 0z" fill="#7a5a3a" stroke="#2a1d10" strokeWidth=".6" />
           <path d="M0 -18 L-3 0 h6z" fill="#1a1008" />
-          <path d="M0 -18 v-6 l7 2 -7 2" fill="#a83a3a" className="anim-wobble" />
+          {!d.cold && <path d="M0 -18 v-6 l7 2 -7 2" fill="#a83a3a" />}
         </g>
       );
     default:
@@ -74,11 +166,14 @@ export function MapFrame({ x0 = 0, w = 400 }) {
       {[[x0 + 12, 12], [x1 - 12, 12], [x0 + 12, MAP_H - 12], [x1 - 12, MAP_H - 12]].map(([x, y], i) => (
         <g key={i} transform={`translate(${x} ${y})`}><circle r="6" fill="none" stroke={INK} strokeWidth="1.2" /><circle r="2" fill={INK} /></g>
       ))}
-      {/* mar nas bordas */}
+      {/* mar nas bordas: águas rasas junto à costa, mais fundas para fora */}
+      <defs>
+        <linearGradient id="seaG" x1="1" y1="0" x2="0" y2="0"><stop offset="0" stopColor="#3a7a80" /><stop offset=".35" stopColor="#1f4d5a" /><stop offset="1" stopColor="#0d2530" /></linearGradient>
+      </defs>
       {[0, 1].map((side) => (
         <g key={side} transform={side ? `translate(${x1} 0) scale(-1 1)` : `translate(${x0} 0)`}>
-          <path d={`M0 0 H26 ${Array.from({ length: 60 }, (_, i) => `q10 ${20 + (i % 3) * 3} 0 50`).join(' ')} H0z`} fill="#15303a" opacity=".85" />
-          {Array.from({ length: 30 }, (_, i) => <path key={i} d={`M4 ${60 + i * 96} q8 -4 16 0 q-8 4 -16 0`} stroke="#4c7f8b" strokeWidth=".8" fill="none" opacity=".5" />)}
+          <path d={`M0 0 H${SEA_W} ${Array.from({ length: 60 }, (_, i) => `q9 ${22 + (i % 3) * 3} 0 50`).join(' ')} H0z`} fill="url(#seaG)" />
+          <path d={`M${SEA_W} 0 ${Array.from({ length: 60 }, (_, i) => `q9 ${22 + (i % 3) * 3} 0 50`).join(' ')}`} fill="none" stroke="#8fb8b0" strokeWidth="1.2" opacity=".35" />
         </g>
       ))}
     </g>
@@ -145,7 +240,7 @@ export function Landmark({ kind }) {
           <rect x="-8" y="-24" width="16" height="24" rx="8" fill="#1e0f06" />
           <Window x={-26} y={-36} w={8} h={10} /><Window x={16} y={-36} w={8} h={10} />
           <circle cx="0" cy="-22" r="34" fill="#ffb14a" opacity=".07" className="anim-glow" style={{ color: '#ffb14a' }} />
-          <path d="M-40 -34 h-10" stroke="#3a2515" strokeWidth="2" /><rect x="-58" y="-38" width="11" height="9" rx="1" fill="#c9a35a" /><text x="-52.5" y="-31" fontSize="7" textAnchor="middle">🐗</text>
+          <path d="M-40 -34 h-10" stroke="#3a2515" strokeWidth="2" /><rect x="-58" y="-38" width="11" height="9" rx="1" fill="#c9a35a" stroke="#6a4f16" strokeWidth=".5" /><path d="M-56 -32 q1 -4 4 -4 q3 0 4 2 l-2 1 q-1 3 -3 3 h-3z" fill="#3a2515" />
         </g>
       );
     case 'abbey':
@@ -254,4 +349,72 @@ export function Landmark({ kind }) {
     default:
       return null;
   }
+}
+
+/* ───────────── Trilhas, pontes e rotor ───────────── */
+export const Track = ({ d }) => (d.track ? (
+  <g fill="none" strokeLinecap="round">
+    <path d={d.track} stroke="#1d160a" strokeWidth="3.6" opacity=".45" />
+    <path d={d.track} stroke="#6b583a" strokeWidth="2.2" opacity=".85" />
+    <path d={d.track} stroke="#8f7c58" strokeWidth=".7" strokeDasharray="1 5" opacity=".7" />
+  </g>
+) : null);
+
+export const Rotor = () => <path d="M0 0 L-2.6 -19 L2.6 -19z M0 0 L19 -2.6 L19 2.6z M0 0 L2.6 19 L-2.6 19z M0 0 L-19 2.6 L-19 -2.6z" fill="#cdbf94" stroke="#2a1d10" strokeWidth=".5" />;
+
+export function Bridge({ b }) {
+  return (
+    <g transform={`translate(${b.x} ${b.y}) rotate(${b.ang})`}>
+      <rect x="-19" y="-8.5" width="38" height="17" rx="1.5" fill="#0d0a05" opacity=".55" />
+      <rect x="-18" y="-7" width="36" height="14" fill="#6b5236" stroke="#2a1d10" strokeWidth=".8" />
+      {Array.from({ length: 9 }, (_, i) => <path key={i} d={`M${-15 + i * 4} -7 V7`} stroke="#3a2a17" strokeWidth=".8" />)}
+      <path d="M-18 -7.4 H18 M-18 7.4 H18" stroke="#8a6c44" strokeWidth="1.6" />
+      {[-17, -6, 6, 17].map((x) => <g key={x}><rect x={x - 1} y="-9" width="2" height="4" fill="#4a3822" /><rect x={x - 1} y="5" width="2" height="4" fill="#4a3822" /></g>)}
+    </g>
+  );
+}
+
+// Leito, margens e água do rio (parada); o movimento fica na camada viva
+export const River = ({ r }) => (
+  <g fill="none" strokeLinecap="round" strokeLinejoin="round">
+    <path d={r.d} stroke="#56683f" strokeWidth="34" opacity=".18" />
+    <path d={r.d} stroke="#3a3120" strokeWidth="25" opacity=".8" />
+    <path d={r.d} stroke="#2b5262" strokeWidth="17" />
+    <path d={r.d} stroke="#1f4350" strokeWidth="9" opacity=".8" />
+    <path d={r.d} stroke="#5f95a3" strokeWidth=".8" strokeDasharray="14 9" opacity=".35" transform="translate(-4 0)" />
+  </g>
+);
+
+/* ───────────── O Zero: terreno apagado e rachaduras ───────────── */
+export function ZeroGround() {
+  return (
+    <g>
+      <defs>
+        <pattern id="zeroGrid" width="8" height="8" patternUnits="userSpaceOnUse"><path d="M8 0 H0 V8" fill="none" stroke="#7d7358" strokeWidth=".4" opacity=".8" /></pattern>
+      </defs>
+      {ZERO.erased.map((e) => (
+        <g key={e.id}>
+          {e.dust.map(([x, y, r], i) => <circle key={i} cx={x} cy={y} r={r} fill="#cfc6a8" opacity=".35" />)}
+          <path d={e.path} fill="#0e0b07" opacity=".5" transform={`translate(${e.x} ${e.y}) scale(1.1) translate(${-e.x} ${-e.y})`} />
+          <path d={e.path} fill="#a99f82" />
+          <path d={e.path} fill="url(#zeroGrid)" />
+          <path d={e.path} fill="none" stroke="#6b6146" strokeWidth="1" strokeDasharray="5 3" opacity=".8" />
+          {e.ghosts.map((h, i) => (
+            <g key={i} transform={`translate(${h.x} ${h.y}) scale(${h.s})`} fill="none" stroke="#5e563f" strokeWidth=".8" strokeDasharray="2 2">
+              <rect x="-8" y="-9" width="16" height="9" /><path d="M-11 -9 L0 -19 L11 -9" /><rect x="-2" y="-5" width="4" height="5" />
+            </g>
+          ))}
+        </g>
+      ))}
+      {ZERO.cracks.map((c, i) => {
+        const d = c.map(([x, y], k) => `${k ? 'L' : 'M'}${x} ${y}`).join(' ');
+        return (
+          <g key={i} fill="none" strokeLinecap="round" strokeLinejoin="round">
+            <path d={d} stroke="#06030a" strokeWidth="3.4" opacity=".9" />
+            <path d={d} stroke="#4a3382" strokeWidth=".9" opacity=".75" />
+          </g>
+        );
+      })}
+    </g>
+  );
 }

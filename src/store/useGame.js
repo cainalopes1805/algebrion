@@ -20,6 +20,7 @@ export const DEFAULT_SETTINGS = {
   vignette: false,
   grain: false,
   torch: false,
+  mapTime: 'auto', // auto (relógio do aparelho) | day | dusk | night — luz do mapa da trilha
   confetti: true,
   screenShake: true,
   sound: true,

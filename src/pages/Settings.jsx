@@ -7,7 +7,13 @@ import { COSMETICS } from '../data/economy';
 import { sounds } from '../utils/audio';
 import HeroPortrait from '../components/HeroPortrait';
 import Character from '../components/Character';
-import { Button, Card, Modal, SectionTitle, Segmented, Slider, Toggle, cx } from '../components/ui';
+import { UserRound, Palette, Sparkles, Languages, Volume2, Database, BedDouble, Lock, Trash2, Plus, RotateCcw, Play, Download, Upload, Check } from 'lucide-react';
+import { Button, Modal, SectionTitle, Segmented, Slider, Toggle, cx } from '../components/ui';
+import { SHOP_ICON } from '../components/gameIcons';
+
+// Superfície e título de bloco usados em todas as abas
+const Card = ({ className = '', gold = false, children }) => <div className={cx('card-pro', gold && '!border-accent/60', className)}>{children}</div>;
+const Heading = ({ children, className = '' }) => <h3 className={cx('eyebrow text-dim mb-3', className)}>{children}</h3>;
 
 const THEMES = [
   { id: 'slate', key: 'theme_slate', swatch: ['#101820', '#33454f'] },
@@ -27,12 +33,12 @@ const ACCENTS = [
 ];
 const PARTICLES = ['embers', 'fireflies', 'snow', 'runes', 'none'];
 const TABS = [
-  { v: 'hero', k: 'tab_hero', i: '🧙' },
-  { v: 'look', k: 'tab_look', i: '🎨' },
-  { v: 'motion', k: 'tab_motion', i: '✨' },
-  { v: 'lang', k: 'tab_lang', i: '🌍' },
-  { v: 'sound', k: 'tab_sound', i: '🔊' },
-  { v: 'data', k: 'tab_data', i: '💾' },
+  { v: 'hero', k: 'tab_hero', Icon: UserRound },
+  { v: 'look', k: 'tab_look', Icon: Palette },
+  { v: 'motion', k: 'tab_motion', Icon: Sparkles },
+  { v: 'lang', k: 'tab_lang', Icon: Languages },
+  { v: 'sound', k: 'tab_sound', Icon: Volume2 },
+  { v: 'data', k: 'tab_data', Icon: Database },
 ];
 
 export default function Settings() {
@@ -40,11 +46,11 @@ export default function Settings() {
   const [tab, setTab] = useState('hero');
   return (
     <div className="space-y-6">
-      <SectionTitle icon="🛏️" sub={t('settings_sub')}>{t('nav_settings')}</SectionTitle>
+      <SectionTitle icon={BedDouble} sub={t('settings_sub')}>{t('nav_settings')}</SectionTitle>
       <div className="flex gap-1.5 overflow-x-auto pb-1 -mx-1 px-1">
         {TABS.map((x) => (
-          <button key={x.v} onClick={() => { sounds.click(); setTab(x.v); }} className={cx('shrink-0 px-3.5 py-2 rounded-xl border font-display text-xs font-bold uppercase tracking-wider transition-colors', tab === x.v ? 'bg-accent text-on-accent border-accent' : 'border-line bg-surface text-dim hover:text-ink hover:border-accent/60')}>
-            {x.i} {t(x.k)}
+          <button key={x.v} onClick={() => { sounds.click(); setTab(x.v); }} className={cx('shrink-0 px-3.5 py-2 rounded-lg border font-display text-[11px] font-extrabold uppercase tracking-[0.12em] inline-flex items-center gap-2 transition-colors', tab === x.v ? 'bg-accent/15 text-accent2 border-accent/60' : 'border-line bg-surface text-dim hover:text-ink hover:border-accent/40')}>
+            <x.Icon size={15} strokeWidth={1.9} />{t(x.k)}
           </button>
         ))}
       </div>
@@ -88,14 +94,14 @@ function HeroTab() {
       </Card>
 
       <Card className="p-5">
-        <h3 className="font-display font-black mb-3">{t('choose_hero')}</h3>
+        <Heading>{t('choose_hero')}</Heading>
         <div className="grid grid-cols-5 gap-2">
           {HERO_IDS.map((h) => {
             const unlocked = h === 'mage' || p.owned.includes(`hero_${h}`);
             return (
-              <button key={h} disabled={!unlocked} onClick={() => setHero(h)} className={cx('relative rounded-xl border-2 overflow-hidden pt-1 aspect-[3/4] flex flex-col items-center bg-black/25 transition-all', p.hero === h ? 'border-accent shadow-[0_0_18px_-4px_rgb(var(--glow)/.8)]' : 'border-line', unlocked ? 'hover:border-accent/70' : 'opacity-40 grayscale')} title={l(CHARACTERS[h].name)}>
+              <button key={h} disabled={!unlocked} onClick={() => setHero(h)} className={cx('relative rounded-xl border overflow-hidden pt-1 aspect-[3/4] flex flex-col items-center bg-black/25 transition-all', p.hero === h ? 'border-accent shadow-[0_0_18px_-4px_rgb(var(--glow)/.8)]' : 'border-line', unlocked ? 'hover:border-accent/70' : 'opacity-40 grayscale')} title={l(CHARACTERS[h].name)}>
                 <Character id={h} size={56} animate={false} />
-                <span className="text-[9px] font-display uppercase tracking-wide mt-auto pb-1 truncate w-full">{unlocked ? l(CHARACTERS[h].name) : '🔒'}</span>
+                <span className="text-[9px] font-display uppercase tracking-wide mt-auto pb-1 truncate w-full">{unlocked ? l(CHARACTERS[h].name) : <Lock size={11} className="mx-auto" />}</span>
               </button>
             );
           })}
@@ -104,12 +110,12 @@ function HeroTab() {
 
         {['frame', 'aura', 'pet'].map((slot) => (
           <div key={slot} className="mt-4">
-            <div className="text-[11px] uppercase tracking-widest text-dim mb-1.5">{t(`slot_${slot}`)}</div>
+            <div className="eyebrow !text-[10px] text-dim mb-2">{t(`slot_${slot}`)}</div>
             <div className="flex flex-wrap gap-2">
               <button onClick={() => equip(slot, null)} className={cx('px-3 py-1.5 rounded-lg border text-xs font-display', !p.equipped[slot] ? 'border-accent text-accent2 bg-accent/10' : 'border-line text-dim')}>{t('none')}</button>
               {ownedSlot(slot).map((c) => (
                 <button key={c.id} onClick={() => equip(slot, c.id)} className={cx('px-3 py-1.5 rounded-lg border text-xs font-display flex items-center gap-1', p.equipped[slot] === c.id ? 'border-accent text-accent2 bg-accent/10' : 'border-line text-dim hover:text-ink')}>
-                  <span>{c.icon}</span> {l(c.name)}
+                  {slot === 'pet' && SHOP_ICON[c.id] ? (() => { const PI = SHOP_ICON[c.id]; return <PI size={13} />; })() : slot === 'aura' && c.color ? <span className="w-2.5 h-2.5 rounded-full" style={{ background: c.color }} /> : null}{l(c.name)}
                 </button>
               ))}
               {ownedSlot(slot).length === 0 && <span className="text-xs text-dim self-center">— {t('buy_in_shop')}</span>}
@@ -119,7 +125,7 @@ function HeroTab() {
       </Card>
 
       <Card className="p-5 lg:col-span-2">
-        <h3 className="font-display font-black mb-3">{t('profiles')}</h3>
+        <Heading>{t('profiles')}</Heading>
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-2">
           {Object.values(profiles).map((pr) => (
             <div key={pr.id} className={cx('flex items-center gap-3 p-2.5 rounded-xl border', pr.id === p.id ? 'border-accent bg-accent/10' : 'border-line bg-black/20')}>
@@ -128,13 +134,13 @@ function HeroTab() {
                 <div className="font-display font-bold truncate text-sm">{pr.name}</div>
                 <div className="text-[11px] text-dim">{t('lvl')} {levelProgress(pr.xp).level} · {pr.xp} XP</div>
               </button>
-              {Object.keys(profiles).length > 1 && <button onClick={() => setConfirmDel(pr)} className="text-dim hover:text-bad px-1" aria-label={t('delete')}>🗑️</button>}
+              {Object.keys(profiles).length > 1 && <button onClick={() => setConfirmDel(pr)} className="text-dim hover:text-bad px-1.5" aria-label={t('delete')}><Trash2 size={16} /></button>}
             </div>
           ))}
         </div>
         <div className="flex gap-2 mt-3">
           <input value={newName} onChange={(e) => setNewName(e.target.value)} placeholder={t('new_hero_name')} maxLength={24} className="flex-1 bg-black/30 border border-line rounded-xl px-3 py-2 focus:outline-none focus:border-accent" />
-          <Button disabled={!newName.trim()} onClick={() => { create(newName); setNewName(''); }}>＋ {t('create')}</Button>
+          <Button disabled={!newName.trim()} onClick={() => { create(newName); setNewName(''); }}><Plus size={16} />{t('create')}</Button>
         </div>
       </Card>
 
@@ -158,35 +164,40 @@ function LookTab() {
   return (
     <div className="grid lg:grid-cols-2 gap-4">
       <Card className="p-5">
-        <h3 className="font-display font-black mb-3">{t('theme')}</h3>
+        <Heading>{t('theme')}</Heading>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
           {THEMES.map((th) => (
-            <button key={th.id} onClick={() => { sounds.click(); set('theme', th.id); }} className={cx('rounded-xl border-2 p-2 text-left transition-all', s.theme === th.id ? 'border-accent shadow-[0_0_18px_-6px_rgb(var(--glow)/.8)]' : 'border-line hover:border-accent/50')}>
+            <button key={th.id} onClick={() => { sounds.click(); set('theme', th.id); }} className={cx('rounded-xl border p-2 text-left transition-all', s.theme === th.id ? 'border-accent shadow-[0_0_18px_-6px_rgb(var(--glow)/.8)]' : 'border-line hover:border-accent/50')}>
               <div className="h-10 rounded-lg mb-1.5 border border-black/40" style={{ background: `linear-gradient(135deg, ${th.swatch[0]} 55%, ${th.swatch[1]})` }} />
               <div className="font-display text-xs font-bold">{t(th.key)}</div>
             </button>
           ))}
         </div>
-        <h3 className="font-display font-black mt-5 mb-3">{t('accent')}</h3>
+        <Heading className="mt-6">{t('accent')}</Heading>
         <div className="flex flex-wrap gap-3">
           {ACCENTS.map((a) => (
-            <button key={a.id} onClick={() => { sounds.click(); set('accent', a.id); }} title={t(a.key)} className={cx('w-11 h-11 rounded-full border-4 transition-transform hover:scale-110', s.accent === a.id ? 'border-ink scale-110' : 'border-transparent')} style={{ background: a.color, boxShadow: `0 0 16px ${a.color}88` }} aria-label={t(a.key)} />
+            <button key={a.id} onClick={() => { sounds.click(); set('accent', a.id); }} title={t(a.key)} className={cx('w-10 h-10 rounded-full border-2 transition-transform hover:scale-110 flex items-center justify-center', s.accent === a.id ? 'border-ink scale-110' : 'border-transparent')} style={{ background: a.color, boxShadow: `0 0 14px ${a.color}77` }} aria-label={t(a.key)}>{s.accent === a.id && <Check size={16} strokeWidth={3} className="text-white drop-shadow" />}</button>
           ))}
         </div>
-        <h3 className="font-display font-black mt-5 mb-2">{t('font_size')}</h3>
+        <Heading className="mt-6 !mb-2">{t('font_size')}</Heading>
         <Segmented value={s.fontScale} onChange={(v) => set('fontScale', v)} options={[{ value: 0.9, label: 'A−' }, { value: 1, label: 'A' }, { value: 1.15, label: 'A+' }, { value: 1.3, label: 'A++' }]} />
       </Card>
 
       <Card className="p-5 divide-y divide-line/50">
         <div className="pb-3">
-          <h3 className="font-display font-black mb-3">{t('particles')}</h3>
+          <Heading>{t('particles')}</Heading>
           <Segmented value={s.particles} onChange={(v) => set('particles', v)} options={PARTICLES.map((x) => ({ value: x, label: t(`part_${x}`) }))} />
           <Slider label={t('density')} value={s.particleDensity} min={0.3} max={2.5} step={0.1} onChange={(v) => set('particleDensity', v)} format={(v) => `${Math.round(v * 100)}%`} />
+        </div>
+        <div className="py-3">
+          <Heading>{t('map_time')}</Heading>
+          <Segmented value={s.mapTime} onChange={(v) => set('mapTime', v)} options={['auto', 'day', 'dusk', 'night'].map((x) => ({ value: x, label: t(`map_${x}`) }))} />
+          <p className="text-xs text-dim mt-2">{t('map_time_d')}</p>
         </div>
         <Toggle label={t('vignette')} desc={t('vignette_d')} checked={s.vignette} onChange={(v) => set('vignette', v)} />
         <Toggle label={t('grain')} desc={t('grain_d')} checked={s.grain} onChange={(v) => set('grain', v)} />
         <Toggle label={t('torch')} desc={t('torch_d')} checked={s.torch} onChange={(v) => set('torch', v)} />
-        <div className="pt-3"><Button variant="ghost" size="sm" onClick={() => useGame.getState().resetSettings()}>↺ {t('reset_settings')}</Button></div>
+        <div className="pt-3"><Button variant="ghost" size="sm" onClick={() => useGame.getState().resetSettings()}><RotateCcw size={13} />{t('reset_settings')}</Button></div>
       </Card>
     </div>
   );
@@ -199,7 +210,7 @@ function MotionTab() {
   const set = useGame((x) => x.setSetting);
   return (
     <Card className="p-5 max-w-2xl">
-      <h3 className="font-display font-black mb-1">{t('motion')}</h3>
+      <Heading className="!mb-1">{t('motion')}</Heading>
       <p className="text-xs text-dim mb-3">{t('motion_d')}</p>
       <Segmented value={s.motion} onChange={(v) => set('motion', v)} options={[{ value: 'full', label: t('motion_full') }, { value: 'reduced', label: t('motion_reduced') }, { value: 'off', label: t('motion_off') }]} />
       <div className="flex justify-center my-5 gap-6 h-[100px]">
@@ -222,13 +233,13 @@ function LangTab() {
   const set = useGame((x) => x.setSetting);
   return (
     <Card className="p-5 max-w-2xl">
-      <h3 className="font-display font-black mb-3">{t('language')}</h3>
+      <Heading>{t('language')}</Heading>
       <div className="grid sm:grid-cols-2 gap-2">
         {LANGS.map((g) => (
-          <button key={g.id} onClick={() => { sounds.click(); set('language', g.id); }} className={cx('flex items-center gap-3 p-3 rounded-xl border-2 transition-all', lang === g.id ? 'border-accent bg-accent/10' : 'border-line hover:border-accent/50')}>
-            <span className="text-3xl">{g.flag}</span>
-            <span className="font-display font-black">{g.label}</span>
-            {lang === g.id && <span className="ml-auto text-accent">✓</span>}
+          <button key={g.id} onClick={() => { sounds.click(); set('language', g.id); }} className={cx('flex items-center gap-3 p-3 rounded-xl border transition-all', lang === g.id ? 'border-accent/70 bg-accent/10' : 'border-line hover:border-accent/40')}>
+            <span className={cx('w-10 h-10 rounded-lg border flex items-center justify-center font-display font-black text-sm tracking-wider', lang === g.id ? 'border-accent/60 bg-accent/15 text-accent2' : 'border-line bg-black/25 text-dim')}>{g.id.toUpperCase()}</span>
+            <span className="font-display font-extrabold">{g.label}</span>
+            {lang === g.id && <Check size={18} strokeWidth={2.6} className="ml-auto text-accent2" />}
           </button>
         ))}
       </div>
@@ -250,7 +261,7 @@ function SoundTab() {
       <div className="py-2"><Slider label={t('music_volume')} value={s.musicVolume} onChange={(v) => set('musicVolume', v)} format={(v) => `${Math.round(v * 100)}%`} /></div>
       <div className="pt-3 flex gap-2 flex-wrap">
         {['correct', 'wrong', 'coin', 'levelUp', 'achievement', 'victory'].map((f) => (
-          <Button key={f} size="sm" variant="ghost" onClick={() => sounds[f]()}>▶ {f}</Button>
+          <Button key={f} size="sm" variant="ghost" onClick={() => sounds[f]()}><Play size={11} className="fill-current" />{f}</Button>
         ))}
       </div>
     </Card>
@@ -287,10 +298,10 @@ function DataTab() {
     <Card className="p-5 max-w-2xl space-y-4">
       <p className="text-sm text-dim">{t('data_note')}</p>
       <div className="flex flex-wrap gap-2">
-        <Button variant="ghost" onClick={download}>⬇️ {t('export')}</Button>
-        <Button variant="ghost" onClick={() => fileRef.current?.click()}>⬆️ {t('import')}</Button>
+        <Button variant="ghost" onClick={download}><Download size={15} />{t('export')}</Button>
+        <Button variant="ghost" onClick={() => fileRef.current?.click()}><Upload size={15} />{t('import')}</Button>
         <input ref={fileRef} type="file" accept="application/json" className="hidden" onChange={onFile} />
-        <Button variant="danger" onClick={() => setConfirm(true)}>🗑️ {t('reset_progress')}</Button>
+        <Button variant="danger" onClick={() => setConfirm(true)}><Trash2 size={15} />{t('reset_progress')}</Button>
       </div>
       {msg && <p className="text-sm font-display font-bold text-accent">{msg}</p>}
       <Modal open={confirm} onClose={() => setConfirm(false)}>

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { NavLink, Outlet, useLocation, Link } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
+import { House, Map, ScrollText, Swords, Trophy, ShoppingBag, Medal, BedDouble, Heart, Coins, Flame, Hourglass } from 'lucide-react';
 import { useGame, useProfile, HEART_REGEN_MS } from '../store/useGame';
 import { levelProgress, rankFor } from '../data/characters';
 import { useT } from '../i18n';
@@ -10,14 +11,14 @@ import Backdrop from './Backdrop';
 import { ProgressBar, cx } from './ui';
 
 const NAV = [
-  { to: '/', icon: '🏠', key: 'nav_home', end: true, mobile: true },
-  { to: '/trail', icon: '🗺️', key: 'nav_trail', mobile: true },
-  { to: '/quests', icon: '📜', key: 'nav_quests' },
-  { to: '/arena', icon: '⚔️', key: 'nav_arena', mobile: true },
-  { to: '/ranking', icon: '🏆', key: 'nav_ranking', mobile: true },
-  { to: '/shop', icon: '🛒', key: 'nav_shop' },
-  { to: '/glories', icon: '🎖️', key: 'nav_glories' },
-  { to: '/settings', icon: '🛏️', key: 'nav_settings', mobile: true },
+  { to: '/', Icon: House, key: 'nav_home', end: true, mobile: true },
+  { to: '/trail', Icon: Map, key: 'nav_trail', mobile: true },
+  { to: '/quests', Icon: ScrollText, key: 'nav_quests' },
+  { to: '/arena', Icon: Swords, key: 'nav_arena', mobile: true },
+  { to: '/ranking', Icon: Trophy, key: 'nav_ranking', mobile: true },
+  { to: '/shop', Icon: ShoppingBag, key: 'nav_shop' },
+  { to: '/glories', Icon: Medal, key: 'nav_glories' },
+  { to: '/settings', Icon: BedDouble, key: 'nav_settings', mobile: true },
 ];
 
 function useCountdown(active, from) {
@@ -40,20 +41,20 @@ export function Hud({ compact = false }) {
   const prog = levelProgress(p.xp);
   const countdown = useCountdown(p.hearts < p.maxHearts, p.heartsAt);
   return (
-    <div className="flex items-center gap-1 sm:gap-3">
+    <div className="flex items-center gap-1 sm:gap-2">
       <Pill title={t('hearts')}>
-        <span className={cx(p.hearts <= 1 && 'anim-glow text-bad')}>❤️</span>
-        <b className="font-display">{p.hearts}</b>
-        <span className="text-dim text-xs">/{p.maxHearts}</span>
-        {countdown && <span className="text-[10px] text-dim ml-1 tabular-nums">⏳{countdown}</span>}
+        <Heart size={17} strokeWidth={2.2} className={cx('text-bad fill-bad/30', p.hearts <= 1 && 'anim-glow')} />
+        <b className="font-display tabular-nums">{p.hearts}</b>
+        <span className="text-dim text-xs -ml-0.5">/{p.maxHearts}</span>
+        {countdown && <span className="text-[10px] text-dim ml-1 tabular-nums inline-flex items-center gap-0.5"><Hourglass size={10} />{countdown}</span>}
       </Pill>
       <Pill title={t('gold')}>
-        <span>💰</span>
+        <Coins size={17} strokeWidth={2.2} className="text-accent2" />
         <b className="font-display tabular-nums">{p.gold}</b>
       </Pill>
       <Pill title={t('streak')}>
-        <span className={cx(p.streak > 0 && 'anim-flame inline-block')}>🔥</span>
-        <b className="font-display">{p.streak}</b>
+        <Flame size={17} strokeWidth={2.2} className={cx(p.streak > 0 ? 'text-orange-400 fill-orange-400/30 anim-flame' : 'text-dim')} />
+        <b className="font-display tabular-nums">{p.streak}</b>
       </Pill>
       {!compact && (
         <div className="hidden sm:flex items-center gap-2 min-w-[130px] flex-1 max-w-[220px]">
@@ -66,7 +67,7 @@ export function Hud({ compact = false }) {
 }
 
 const Pill = ({ children, title }) => (
-  <div title={title} className="flex items-center gap-1.5 px-1.5 py-1 text-sm font-black">
+  <div title={title} className="flex items-center gap-1.5 px-2.5 py-1 text-sm font-black rounded-full bg-white/[0.04] border border-line/70">
     {children}
   </div>
 );
@@ -81,12 +82,12 @@ export default function Layout() {
   return (
     <div className="relative z-10 min-h-screen lg:pl-64">
       {/* Barra lateral — desktop */}
-      <aside className="hidden lg:flex fixed inset-y-0 left-0 w-64 flex-col p-4 gap-4 border-r-2 border-line bg-bg z-30">
+      <aside className="hidden lg:flex fixed inset-y-0 left-0 w-64 flex-col p-4 gap-4 border-r border-line bg-bg z-30">
         <Link to="/" className="block text-center pt-2" onClick={() => sounds.click()}>
-          <div className="font-fancy text-2xl font-black text-accent leading-none">Algebrion</div>
-          <div className="text-[10px] tracking-[0.3em] text-dim uppercase mt-1.5 font-black">{t('tagline')}</div>
+          <div className="font-fancy text-[26px] font-black text-accent2 leading-none tracking-wide">Algebrion</div>
+          <div className="flex items-center gap-2 mt-2 text-dim"><span className="h-px flex-1 bg-line" /><span className="text-[9px] tracking-[0.28em] uppercase font-extrabold">{t('tagline')}</span><span className="h-px flex-1 bg-line" /></div>
         </Link>
-        <Link to="/settings" className="panel p-3 flex items-center gap-3 hover:border-accent transition-colors">
+        <Link to="/settings" className="card-pro p-3 flex items-center gap-3 hover:border-accent/60 transition-colors">
           <HeroPortrait hero={p.hero} equipped={p.equipped} size={56} />
           <div className="min-w-0">
             <div className="font-display font-black truncate">{p.name}</div>
@@ -101,10 +102,10 @@ export default function Layout() {
               end={n.end}
               onClick={() => sounds.click()}
               className={({ isActive }) =>
-                cx('flex items-center gap-3 px-3 py-2.5 rounded-2xl font-display text-sm font-black uppercase tracking-wider border-2 transition-colors', isActive ? 'bg-accent/15 text-accent2 border-accent/60' : 'text-dim hover:bg-white/5 border-transparent')
+                cx('flex items-center gap-3 px-3 py-2.5 rounded-xl font-display text-[13px] font-extrabold uppercase tracking-[0.12em] border transition-colors', isActive ? 'bg-accent/12 text-accent2 border-accent/40 shadow-[inset_3px_0_0_var(--c-accent)]' : 'text-dim hover:bg-white/5 hover:text-ink border-transparent')
               }
             >
-              <span className="text-lg w-6 text-center">{n.icon}</span>
+              <n.Icon size={19} strokeWidth={1.9} className="w-6 shrink-0" />
               {t(n.key)}
             </NavLink>
           ))}
@@ -113,7 +114,7 @@ export default function Layout() {
       </aside>
 
       {/* HUD superior */}
-      <header className="sticky top-0 z-30 border-b-2 border-line bg-bg/95 backdrop-blur">
+      <header className="sticky top-0 z-30 border-b border-line bg-bg/95 backdrop-blur">
         <div className="max-w-3xl mx-auto px-4 py-2.5 flex items-center justify-between gap-3">
           <Hud />
           <Link to="/settings" className="lg:hidden">
@@ -131,7 +132,7 @@ export default function Layout() {
       </main>
 
       {/* Navegação inferior — mobile */}
-      <nav className="lg:hidden fixed bottom-0 inset-x-0 z-30 border-t-2 border-line bg-bg pb-[env(safe-area-inset-bottom)]">
+      <nav className="lg:hidden fixed bottom-0 inset-x-0 z-30 border-t border-line bg-bg pb-[env(safe-area-inset-bottom)]">
         <div className="flex justify-around px-2 py-1.5">
           {NAV.filter((n) => n.mobile).map((n) => (
             <NavLink
@@ -139,12 +140,13 @@ export default function Layout() {
               to={n.to}
               end={n.end}
               onClick={() => sounds.click()}
-              className={({ isActive }) => cx('flex-1 mx-0.5 flex flex-col items-center gap-0.5 py-1.5 rounded-2xl border-2', isActive ? 'bg-accent/15 border-accent/60' : 'border-transparent')}
+              className={({ isActive }) => cx('flex-1 mx-0.5 flex flex-col items-center gap-1 py-1.5 rounded-xl', isActive ? 'text-accent2' : 'text-dim')}
             >
               {({ isActive }) => (
                 <>
-                  <motion.span animate={{ scale: isActive ? 1.15 : 1 }} className="text-[26px] leading-none">{n.icon}</motion.span>
-                  <span className={cx('text-[9px] font-black uppercase tracking-wide', isActive ? 'text-accent2' : 'text-dim')}>{t(n.key)}</span>
+                  <motion.span animate={{ scale: isActive ? 1.1 : 1 }} className="leading-none"><n.Icon size={22} strokeWidth={isActive ? 2.2 : 1.8} /></motion.span>
+                  <span className="text-[9px] font-extrabold uppercase tracking-wider">{t(n.key)}</span>
+                  <span className={cx('h-0.5 w-5 rounded-full transition-colors', isActive ? 'bg-accent' : 'bg-transparent')} />
                 </>
               )}
             </NavLink>

@@ -228,6 +228,12 @@ export const UI = {
   grain_d: ['Granulado sutil por cima de tudo.', 'Subtle film grain over everything.', 'Grano sutil sobre todo.', 'Grain subtil sur tout.'],
   torch: ['Brilho de tochas', 'Torchlight glow', 'Brillo de antorchas', 'Lueur de torches'],
   torch_d: ['Luz bruxuleante nas laterais.', 'Flickering light on the sides.', 'Luz titilante en los lados.', 'Lumière vacillante sur les côtés.'],
+  map_time: ['Luz do mapa', 'Map lighting', 'Luz del mapa', 'Éclairage de la carte'],
+  map_time_d: ['No modo automático, o mapa segue a hora do seu aparelho.', 'In automatic mode the map follows your device clock.', 'En modo automático el mapa sigue la hora de tu dispositivo.', 'En mode automatique, la carte suit l’heure de votre appareil.'],
+  map_auto: ['Automática', 'Automatic', 'Automática', 'Automatique'],
+  map_day: ['Dia', 'Day', 'Día', 'Jour'],
+  map_dusk: ['Entardecer', 'Dusk', 'Atardecer', 'Crépuscule'],
+  map_night: ['Noite', 'Night', 'Noche', 'Nuit'],
   reset_settings: ['Restaurar padrões visuais', 'Restore visual defaults', 'Restaurar valores visuales', 'Rétablir les valeurs visuelles'],
 
   motion: ['Intensidade do movimento', 'Motion intensity', 'Intensidad del movimiento', 'Intensité du mouvement'],

@@ -47,7 +47,7 @@ export default function ParticleField() {
       if (particles === 'runes') { p.r = 9 + r * 10; }
       return p;
     };
-    const count = Math.round(base * (particles === 'runes' ? 0.45 : particles === 'snow' ? 1.3 : 1));
+    const count = Math.round(base * (particles === 'runes' ? 1.5 : particles === 'snow' ? 1.3 : 1));
     const ps = Array.from({ length: count }, () => spawn(true));
 
     let last = performance.now();
@@ -86,7 +86,7 @@ export default function ParticleField() {
         } else if (particles === 'runes') {
           p.y -= p.sp * 0.35 * dt;
           p.x += Math.sin(p.ph) * 0.25 * dt;
-          const a = Math.sin(Math.max(0, Math.min(1, p.y / h)) * Math.PI) * 0.35;
+          const a = Math.sin(Math.max(0, Math.min(1, p.y / h)) * Math.PI) * (0.4 + 0.3 * Math.abs(Math.sin(p.ph * 0.8)));
           ctx.fillStyle = `rgba(${rgb},${a})`;
           ctx.shadowBlur = 0;
           ctx.font = `${p.r}px Cinzel, serif`;

@@ -30,15 +30,22 @@ export function Card({ className = '', gold = false, children, ...rest }) {
   );
 }
 
-export function SectionTitle({ icon, children, sub }) {
+// `icon` aceita um componente lucide (preferido) ou, nas telas ainda não revisadas, um emoji em texto.
+export function SectionTitle({ icon: Icon, children, sub }) {
   return (
     <div className="mb-4">
-      <h2 className="font-display text-xl sm:text-2xl font-black text-gold-grad flex items-center gap-2">
-        {icon && <span className="text-2xl">{icon}</span>}
-        {children}
-      </h2>
-      {sub && <p className="text-dim text-sm mt-0.5">{sub}</p>}
-      <div className="mt-2 h-px bg-gradient-to-r from-accent/70 via-line to-transparent" />
+      <div className="flex items-center gap-3">
+        {Icon && (
+          <span className="w-10 h-10 shrink-0 rounded-xl bg-accent/10 border border-accent/40 flex items-center justify-center text-accent2">
+            {typeof Icon === 'string' ? <span className="text-xl">{Icon}</span> : <Icon size={20} strokeWidth={1.8} />}
+          </span>
+        )}
+        <div className="min-w-0">
+          <h2 className="font-display text-xl sm:text-[22px] font-black leading-tight text-ink">{children}</h2>
+          {sub && <p className="text-dim text-xs mt-0.5">{sub}</p>}
+        </div>
+      </div>
+      <div className="mt-3 h-px bg-gradient-to-r from-accent/60 via-line to-transparent" />
     </div>
   );
 }
