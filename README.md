@@ -1,16 +1,23 @@
-# React + Vite
+# Algebrion — Reino das Matrizes
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+App web (React + Vite + Tailwind 4 + Framer Motion + Zustand) para aprender matrizes de forma interativa, em estilo Duolingo com tema medieval escuro.
 
-Currently, two official plugins are available:
+## Rodar
+```
+npm install
+npm run dev      # desenvolvimento
+npm run build    # produção
+```
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## O que tem
+- **Mapa medieval ilustrado** (tela Trilha): estrada com paradas, 8 locais (taverna, abadia, laboratório, forte, torre, caverna da forja, labirinto, castelo) e o herói viajando de um ponto ao outro.
+- **História RPG** em 7 capítulos + prólogo: diálogos, escolhas que mudam falas e finais, enigmas de matrizes dentro das cenas, 7 Fragmentos da Grande Matriz e o vilão Nullus (`src/data/story.js`).
+- **Lições interativas** (explica, você resolve na hora) e fases com chefes.
+- 8 tipos de desafio: múltipla escolha, V/F, clicar na célula, ligar pares, ordenar passos, resposta numérica e preencher matriz (teclado numérico).
+- Geradores procedurais de exercícios (nunca repetem números) usados em fases, chefes e na **Arena** infinita.
+- Corações com regeneração, combo, XP/níveis, ouro, sequência diária, missões diárias, 23 glórias, loja (poções, molduras, auras, companheiros, heróis).
+- **Ranking** (liga semanal, Salão da Fama, Arena) — rivais simulados + perfis locais (não há servidor).
+- Personalização: 6 temas, 6 cores, tamanho de texto, partículas, movimento (completo/reduzido/desligado), 4 idiomas (pt/en/es/fr), sons e música procedurais, múltiplos perfis, exportar/importar save.
 
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the Oxlint configuration
-
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and Oxlint's TypeScript related rules in your project.
+## Estrutura
+`src/data` conteúdo e regras · `src/store` estado/persistência · `src/i18n` idiomas · `src/components` UI · `src/pages` telas.

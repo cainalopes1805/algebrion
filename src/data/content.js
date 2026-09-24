@@ -2,7 +2,7 @@
 import { L } from '../i18n/core';
 import { legacyMissions } from './legacy';
 import { newMissions } from './newMissions';
-import { lessonsByMission } from './lessons';
+import { lessonsByMission, LESSON_TRIES } from './lessons';
 import { buildSession, realize } from './generators';
 import { makeRng } from '../utils/rng';
 
@@ -40,7 +40,7 @@ const fromLegacy = (m) => {
 
 const withBoss = (m) => ({
   ...m,
-  lessons: lessonsByMission[m.id] || [],
+  lessons: (lessonsByMission[m.id] || []).map((ls) => ({ ...ls, tries: LESSON_TRIES[`${m.id}-${ls.id}`] || [] })),
   levels: [
     ...m.levels,
     {

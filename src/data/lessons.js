@@ -177,7 +177,7 @@ export const lessonsByMission = {
   4: [
     {
       id: 1,
-      icon: '🪞',
+      icon: '🔮',
       title: L('A matriz transposta', 'The transpose', 'La matriz transpuesta', 'La matrice transposée'),
       pages: [
         page(
@@ -392,4 +392,26 @@ export const lessonsByMission = {
       ],
     },
   ],
+};
+
+// Mini-desafios intercalados: após a página i da lição, o aluno resolve um exercício gerado na hora.
+export const LESSON_TRIES = {
+  '1-1': ['count', 'dim', 'elemClick'],
+  '1-2': ['dim', 'trace', 'elemValue'],
+  '2-1': ['sumCell', 'subMatrix'],
+  '2-2': [null, 'sumPossible'],
+  '3-1': ['scalarCell', 'scalarMatrix'],
+  '3-2': ['combo', 'combo'],
+  '4-1': ['transposeDim', 'transposeMatrix'],
+  '4-2': ['transposeMatrix'],
+  '4-3': ['symmetric', 'symmetric'],
+  '5-1': ['mulOrder'],
+  '5-2': ['mulCell', 'mulMatrix'],
+  '5-3': ['mulCell'],
+  '6-1': ['det2'],
+  '6-2': ['det3'],
+  '6-3': ['detScalar'],
+  '7-1': ['invertible'],
+  '7-2': ['inv2'],
+  '7-3': ['solve'],
 };

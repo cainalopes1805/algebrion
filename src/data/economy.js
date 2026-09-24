@@ -25,7 +25,7 @@ export const COSMETICS = [
   { id: 'aura_royal', slot: 'aura', icon: '👑', price: 1000, color: '#f2cf7a', name: L('Aura Real', 'Royal Aura', 'Aura Real', 'Aura Royale') },
   // Companheiros
   { id: 'pet_owl', slot: 'pet', icon: '🦉', price: 400, name: L('Coruja Sábia', 'Wise Owl', 'Búho Sabio', 'Chouette Sage') },
-  { id: 'pet_cat', slot: 'pet', icon: '🐈‍⬛', price: 350, name: L('Gato das Sombras', 'Shadow Cat', 'Gato de las Sombras', 'Chat des Ombres') },
+  { id: 'pet_cat', slot: 'pet', icon: '🐱', price: 350, name: L('Gato das Sombras', 'Shadow Cat', 'Gato de las Sombras', 'Chat des Ombres') },
   { id: 'pet_wisp', slot: 'pet', icon: '✨', price: 600, name: L('Fogo-Fátuo', 'Will-o’-Wisp', 'Fuego Fatuo', 'Feu Follet') },
   { id: 'pet_dragon', slot: 'pet', icon: '🐉', price: 800, name: L('Dragãozinho', 'Baby Dragon', 'Dragoncito', 'Bébé Dragon') },
   // Heróis
@@ -65,6 +65,10 @@ export const ACHIEVEMENTS = [
   { id: 'collector', icon: '🎁', gold: 80, name: L('Colecionador', 'Collector', 'Coleccionista', 'Collectionneur'), desc: L('Possua 5 itens cosméticos.', 'Own 5 cosmetic items.', 'Posee 5 objetos cosméticos.', 'Possédez 5 objets cosmétiques.'), test: (p) => p.owned.length >= 5 },
   { id: 'stylist', icon: '🎨', gold: 30, name: L('Estilista', 'Stylist', 'Estilista', 'Styliste'), desc: L('Personalize tema e cor de destaque.', 'Customize theme and accent color.', 'Personaliza tema y color de acento.', 'Personnalisez thème et couleur d’accent.'), test: (p) => p.flags.theme && p.flags.accent },
   { id: 'polyglot', icon: '🗣️', gold: 30, name: L('Poliglota', 'Polyglot', 'Políglota', 'Polyglotte'), desc: L('Mude o idioma do reino.', 'Change the realm’s language.', 'Cambia el idioma del reino.', 'Changez la langue du royaume.'), test: (p) => p.flags.language },
+  { id: 'shard3', icon: '🔷', gold: 60, name: L('Colecionador de Fragmentos', 'Shard Collector', 'Coleccionista de Fragmentos', 'Collectionneur de Fragments'), desc: L('Recupere 3 Fragmentos da Grande Matriz.', 'Recover 3 shards of the Great Matrix.', 'Recupera 3 Fragmentos de la Gran Matriz.', 'Récupérez 3 fragments de la Grande Matrice.'), test: (p) => p.story.shards.length >= 3 },
+  { id: 'great_matrix', icon: '🌌', gold: 250, name: L('A Grande Matriz', 'The Great Matrix', 'La Gran Matriz', 'La Grande Matrice'), desc: L('Reúna os 7 Fragmentos.', 'Gather all 7 shards.', 'Reúne los 7 Fragmentos.', 'Réunissez les 7 fragments.'), test: (p) => p.story.shards.length >= 7 },
+  { id: 'mercy', icon: '🕊️', gold: 100, name: L('Misericórdia', 'Mercy', 'Misericordia', 'Miséricorde'), desc: L('Escolha restaurar Nullus.', 'Choose to restore Nullus.', 'Elige restaurar a Nullus.', 'Choisissez de restaurer Nullus.'), test: (p) => p.story.flags.ending === 'mercy' },
+  { id: 'justice', icon: '⚖️', gold: 100, name: L('Justiça', 'Justice', 'Justicia', 'Justice'), desc: L('Escolha banir Nullus.', 'Choose to banish Nullus.', 'Elige desterrar a Nullus.', 'Choisissez de bannir Nullus.'), test: (p) => p.story.flags.ending === 'justice' },
   { id: 'grandmaster', icon: '👑', gold: 500, name: L('Grão-Mestre das Matrizes', 'Matrix Grandmaster', 'Gran Maestro de las Matrices', 'Grand Maître des Matrices'), desc: L('Conclua todas as fases do reino.', 'Clear every stage in the realm.', 'Supera todas las fases del reino.', 'Terminez toutes les étapes du royaume.'), test: (p) => completedCount(p) >= TOTAL_LEVELS },
 ];
 export const ACH_BY_ID = Object.fromEntries(ACHIEVEMENTS.map((a) => [a.id, a]));

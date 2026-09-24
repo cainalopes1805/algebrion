@@ -11,15 +11,15 @@ export const HEART_REGEN_MS = 8 * 60 * 1000;
 
 export const DEFAULT_SETTINGS = {
   language: 'pt',
-  theme: 'crypt',
+  theme: 'slate',
   accent: 'gold',
   fontScale: 1,
   motion: 'full', // full | reduced | off
   particles: 'embers', // embers | fireflies | snow | runes | none
-  particleDensity: 1,
-  vignette: true,
-  grain: true,
-  torch: true,
+  particleDensity: 0.6,
+  vignette: false,
+  grain: false,
+  torch: false,
   confetti: true,
   screenShake: true,
   sound: true,
@@ -51,6 +51,7 @@ const emptyProfile = (name = 'Aprendiz', hero = 'mage') => ({
   items: { shield: 1, hint: 2, xpPotion: 0 },
   quests: { day: null, list: [] },
   flags: {},
+  story: { seen: {}, flags: {}, shards: [] },
   stats: { correct: 0, wrong: 0, bestCombo: 0, perfect: 0, arenaBest: 0, arenaRuns: 0, goldEarned: 0, levelsCleared: 0 },
 });
 
@@ -92,7 +93,7 @@ function load() {
       if (data.profiles && Object.keys(data.profiles).length) {
         const base = emptyProfile();
         const profiles = Object.fromEntries(
-          Object.entries(data.profiles).map(([id, p]) => [id, { ...base, ...p, stats: { ...base.stats, ...p.stats }, equipped: { ...base.equipped, ...p.equipped }, items: { ...base.items, ...p.items } }]),
+          Object.entries(data.profiles).map(([id, p]) => [id, { ...base, ...p, stats: { ...base.stats, ...p.stats }, equipped: { ...base.equipped, ...p.equipped }, items: { ...base.items, ...p.items }, story: { ...base.story, ...p.story } }]),
         );
         return {
           settings: { ...DEFAULT_SETTINGS, ...data.settings },
@@ -336,6 +337,27 @@ export const useGame = create((set, get) => {
         const g = grant(np, { xp: q.xp, gold: q.gold });
         sounds.coin();
         return { p: g.p, leveledTo: g.leveledTo, out: true };
+      }),
+
+    /* ───── História ───── */
+    setStoryFlag: (key, value) => mutate((p) => ({ p: { ...p, story: { ...p.story, flags: { ...p.story.flags, [key]: value } } } })),
+    // Recompensas de escolhas/cenas: { gold, xp, items:{shield:1} }. Ouro negativo = custo.
+    storyReward: ({ gold = 0, xp = 0, items } = {}) =>
+      mutate((p) => {
+        let np = p;
+        if (items) np = { ...np, items: Object.fromEntries(Object.entries({ ...np.items, ...Object.fromEntries(Object.entries(items).map(([k, v]) => [k, (np.items[k] || 0) + v])) })) };
+        if (gold < 0) np = { ...np, gold: Math.max(0, np.gold + gold) };
+        const g = grant(np, { xp, gold: Math.max(0, gold) });
+        return { p: g.p, leveledTo: g.leveledTo };
+      }),
+    addShard: (n) =>
+      mutate((p) => (p.story.shards.includes(n) ? null : { p: { ...p, story: { ...p.story, shards: [...p.story.shards, n] } } })),
+    finishScene: (id, reward) =>
+      mutate((p) => {
+        if (p.story.seen[id]) return { out: { first: false } };
+        let np = { ...p, story: { ...p.story, seen: { ...p.story.seen, [id]: Date.now() } } };
+        const g = grant(np, { xp: reward?.xp || 0, gold: reward?.gold || 0 });
+        return { p: g.p, leveledTo: g.leveledTo, out: { first: true } };
       }),
 
     /* ───── Mercador ───── */

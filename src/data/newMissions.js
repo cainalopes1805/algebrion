@@ -15,7 +15,7 @@ export const newMissions = [
     id: 4,
     title: L('A Torre dos Espelhos', 'The Tower of Mirrors', 'La Torre de los Espejos', 'La Tour des Miroirs'),
     subtitle: L('Transposta e Simetria', 'Transpose and Symmetry', 'Transpuesta y Simetría', 'Transposée et Symétrie'),
-    icon: '🪞',
+    icon: '🔮',
     biome: 'violet',
     mentor: 'witch',
     boss: 'bat',

@@ -50,6 +50,16 @@ export const CHARACTERS = {
   },
 };
 
+// ── Elenco da história ──
+CHARACTERS.innkeeper = {
+  name: L('Marta, a Taverneira', 'Marta the Innkeeper', 'Marta, la Tabernera', 'Marta, l’Aubergiste'), role: L('Dona do Javali Dourado', 'Keeper of the Golden Boar', 'Dueña del Jabalí Dorado', 'Patronne du Sanglier Doré'),
+  skin: '#e9c4a0', robe: '#7a4a3a', robe2: '#5a3428', trim: '#d8b070', hair: '#7a3a1c', braid: true, hat: 'none', prop: 'flask', glow: '#ffb676',
+};
+CHARACTERS.nullus = {
+  name: L('Nullus, o Senhor do Zero', 'Nullus, Lord of Zero', 'Nullus, el Señor del Cero', 'Nullus, Seigneur du Zéro'), role: L('O Vazio que devora números', 'The Void that devours numbers', 'El Vacío que devora números', 'Le Vide qui dévore les nombres'),
+  skin: '#b8bcc8', robe: '#24242f', robe2: '#15151e', trim: '#8a8fa8', hair: '#111', hat: 'hood', hatColor: '#15151e', prop: 'orb', glow: '#9aa0c0', eyesGlow: true,
+};
+
 export const HERO_IDS = ['mage', 'knight', 'ranger', 'alchemist', 'bard'];
 
 // Chefes de cada missão (desenhados em SVG por <Monster />)
