@@ -2,7 +2,7 @@
 import { L } from '../i18n/core';
 import { legacyMissions } from './legacy';
 import { newMissions } from './newMissions';
-import { lessonsByMission, LESSON_TRIES } from './lessons';
+import { CURRICULUM, CHAPTER_EXAM, CHAPTER_EXAM_DESC } from './curriculum';
 import { buildSession, realize } from './generators';
 import { makeRng } from '../utils/rng';
 
@@ -38,25 +38,57 @@ const fromLegacy = (m) => {
   };
 };
 
-const withBoss = (m) => ({
-  ...m,
-  lessons: (lessonsByMission[m.id] || []).map((ls) => ({ ...ls, tries: LESSON_TRIES[`${m.id}-${ls.id}`] || [] })),
-  levels: [
-    ...m.levels,
-    {
-      id: m.levels.length + 1,
-      boss: true,
-      title: bossTitle,
-      description: L('Derrote o chefe da região com tudo o que aprendeu.', 'Defeat the region’s boss with everything you learned.', 'Derrota al jefe de la región con todo lo aprendido.', 'Battez le boss de la région avec tout ce que vous avez appris.'),
-      xpReward: 30 + m.id * 12,
-      goldReward: 40 + m.id * 10,
-      activities: [],
-      gen: m.bossPlan,
-    },
-  ],
-});
+// Monta cada missão a partir do currículo: um conceito = uma lição + uma fase de treino; depois a prova e o chefe.
+const build = (m) => {
+  const concepts = CURRICULUM[m.id];
+  const n = concepts.length;
+  const xp = 22 + m.id * 4, gold = 12 + m.id * 3;
+  const lessons = concepts.map((c, i) => ({
+    id: i + 1,
+    icon: '📖',
+    title: c.title,
+    pages: c.pages.map(({ title, body, display, formula }) => ({ title, body, display, formula })),
+    tries: c.pages.map((pg) => pg.tries || []),
+  }));
+  const levels = concepts.map((c, i) => ({
+    id: i + 1,
+    concept: true,
+    title: L(`Treino: ${c.title.pt}`, `Practice: ${c.title.en}`),
+    description: L('Treino guiado, do aquecimento ao desafio.', 'Guided practice, from warm-up to challenge.'),
+    xpReward: xp,
+    goldReward: gold,
+    activities: [],
+    gen: c.practice,
+  }));
+  const pool = m.levels.flatMap((lv) => lv.activities);
+  levels.push({
+    id: n + 1,
+    exam: true,
+    title: CHAPTER_EXAM,
+    description: CHAPTER_EXAM_DESC,
+    xpReward: Math.round(xp * 1.6),
+    goldReward: Math.round(gold * 1.6),
+    activities: [],
+    pool,
+    poolPick: Math.min(pool.length, 5),
+    gen: m.bossPlan.map(([name, c]) => [name, Math.max(1, Math.round(c * 1.5))]),
+    shuffle: true,
+  });
+  levels.push({
+    id: n + 2,
+    boss: true,
+    title: bossTitle,
+    description: L('Derrote o chefe da região com tudo o que aprendeu.', 'Defeat the region’s boss with everything you learned.', 'Derrota al jefe de la región con todo lo aprendido.', 'Battez le boss de la région avec tout ce que vous avez appris.'),
+    xpReward: 30 + m.id * 12,
+    goldReward: 40 + m.id * 10,
+    activities: [],
+    gen: m.bossPlan,
+    shuffle: true,
+  });
+  return { ...m, lessons, levels };
+};
 
-export const MISSIONS = [...legacyMissions.map(fromLegacy), ...newMissions].map(withBoss);
+export const MISSIONS = [...legacyMissions.map(fromLegacy), ...newMissions].map(build);
 export const getMission = (id) => MISSIONS.find((m) => m.id === Number(id));
 export const getLevel = (mid, lid) => getMission(mid)?.levels.find((l) => l.id === Number(lid));
 export const bossLevelId = (m) => m.levels.length;
@@ -67,7 +99,10 @@ export const TOTAL_LESSONS = MISSIONS.reduce((n, m) => n + m.lessons.length, 0);
 export function buildLevelSession(mission, level, seed = Date.now()) {
   const rng = makeRng(seed);
   const gen = level.gen?.length ? buildSession(rng, level.gen) : [];
-  return [...level.activities, ...gen];
+  const picked = level.pool?.length ? rng.shuffle(level.pool).slice(0, level.poolPick || level.pool.length) : [];
+  const all = [...level.activities, ...picked, ...gen];
+  // fases de treino mantêm a ordem (do fácil ao difícil); prova e chefe embaralham
+  return level.shuffle ? rng.shuffle(all) : all;
 }
 
 // Um nível “treino”: mesmo tema do nível, 100% gerado — usado no modo Prática

@@ -1,5 +1,6 @@
 // Geradores procedurais de exercícios — infinitos, corretos por construção e nos 4 idiomas.
 import { L } from '../i18n/core';
+import { EXTRA } from './generators2';
 import {
   add, sub, scale, mul, transpose, det2, det3, inv2, isSymmetric, trace, mat, fmt, idx,
 } from './mathkit';
@@ -485,6 +486,8 @@ g.solve = (rng) => {
 };
 
 export const GENERATORS = g;
+Object.assign(g, EXTRA);
+
 export const TIERS = {
   1: ['dim', 'elemClick', 'elemValue', 'count', 'formula', 'trace'],
   2: ['sumCell', 'sumMatrix', 'subMatrix', 'sumPossible', 'scalarCell', 'scalarMatrix', 'combo'],
@@ -494,8 +497,10 @@ export const TIERS = {
 
 let uid = 0;
 // Converte a saída bruta do gerador em atividade completa
-export function realize(name, rng) {
-  const a = { ...g[name](rng), id: `gen-${name}-${++uid}`, gen: name };
+// `name` pode trazer o nível de dificuldade: 'sumMatrix@2' (1 = aquecimento, 2 = normal, 3 = desafio)
+export function realize(spec, rng) {
+  const [name, lvl] = String(spec).split('@');
+  const a = { ...g[name](rng, lvl ? Number(lvl) : 2), id: `gen-${name}-${++uid}`, gen: name };
   if (a.options === 'tf') {
     a.options = [TRUE, FALSE];
     a.correctAnswer = a.correctBool ? TRUE : FALSE;
@@ -506,8 +511,18 @@ export function realize(name, rng) {
 // Sessão: lista [[gerador, quantidade], ...] → atividades embaralhadas
 export function buildSession(rng, plan) {
   const out = [];
-  for (const [name, n] of plan) for (let i = 0; i < n; i++) out.push(realize(name, rng));
-  return rng.shuffle(out);
+  // evita perguntas repetidas na mesma sessão (afirmações V/F têm poucas variações)
+  const seen = new Set();
+  const key = (a) => JSON.stringify([a.question, a.matrix, a.display, a.gen]);
+  for (const [name, n, lvl] of plan) {
+    for (let i = 0; i < n; i++) {
+      let a = realize(lvl ? `${name}@${lvl}` : name, rng);
+      for (let t = 0; t < 12 && seen.has(key(a)); t++) a = realize(lvl ? `${name}@${lvl}` : name, rng);
+      seen.add(key(a));
+      out.push(a);
+    }
+  }
+  return out;
 }
 
 export function tierSession(rng, tiers, count) {

@@ -3,6 +3,8 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { useGame, useProfile } from '../store/useGame';
 import { ACH_BY_ID } from '../data/economy';
 import { rankFor } from '../data/characters';
+import { SPELL_BY_ID } from '../data/spells';
+import { spellIcon } from './spellIcons';
 import { useT } from '../i18n';
 import Confetti from './Confetti';
 import Character from './Character';
@@ -36,6 +38,27 @@ function AchievementToast({ ev, onDone }) {
   );
 }
 
+function SpellToast({ ev, onDone }) {
+  const { t, l } = useT();
+  const sp = SPELL_BY_ID[ev.id];
+  useEffect(() => {
+    const id = setTimeout(onDone, 6000);
+    return () => clearTimeout(id);
+  }, [onDone]);
+  if (!sp) return null;
+  const Icon = spellIcon(sp.icon);
+  return (
+    <motion.div layout initial={{ x: 320, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: 320, opacity: 0 }} transition={{ type: 'spring', damping: 22, stiffness: 240 }} onClick={onDone} className="card-pro !border-mana/70 p-3 pr-4 flex items-center gap-3 w-[min(92vw,340px)] cursor-pointer">
+      <div className="w-12 h-12 rounded-xl bg-mana/15 border border-mana/60 flex items-center justify-center text-mana anim-glow"><Icon size={24} strokeWidth={1.8} /></div>
+      <div className="min-w-0">
+        <div className="eyebrow !text-[10px] text-mana">{t('spell_new')}</div>
+        <div className="font-display font-black leading-tight truncate">{l(sp.name)}</div>
+        <div className="text-xs text-dim leading-tight">{t('spell_learned')}</div>
+      </div>
+    </motion.div>
+  );
+}
+
 function LevelUpModal({ ev, onDone }) {
   const { t, l } = useT();
   const p = useProfile();
@@ -56,7 +79,7 @@ function LevelUpModal({ ev, onDone }) {
 export default function Toasts() {
   const events = useGame((s) => s.events);
   const dismiss = useGame((s) => s.dismissEvent);
-  const ach = events.filter((e) => e.type === 'achievement');
+  const ach = events.filter((e) => e.type === 'achievement' || e.type === 'spell');
   const lvl = events.find((e) => e.type === 'levelup');
   return (
     <>
@@ -64,7 +87,7 @@ export default function Toasts() {
         <AnimatePresence>
           {ach.slice(0, 3).map((e) => (
             <div key={e.id} className="pointer-events-auto">
-              <AchievementToast ev={e} onDone={() => dismiss(e.id)} />
+              {e.type === 'spell' ? <SpellToast ev={e} onDone={() => dismiss(e.id)} /> : <AchievementToast ev={e} onDone={() => dismiss(e.id)} />}
             </div>
           ))}
         </AnimatePresence>

@@ -18,6 +18,8 @@ import Shop from './pages/Shop';
 import Quests from './pages/Quests';
 import Glories from './pages/Glories';
 import Settings from './pages/Settings';
+import Grimoire from './pages/Grimoire';
+import Tome, { TomeLibrary } from './pages/Tome';
 
 // Aplica configurações globais (tema, acento, movimento, fonte, áudio) e ciclos de tempo
 function GlobalEffects() {
@@ -28,11 +30,12 @@ function GlobalEffects() {
     root.dataset.theme = s.theme;
     root.dataset.accent = s.accent;
     root.dataset.motion = s.motion;
+    root.dataset.grain = s.grain ? 'on' : 'off';
     root.lang = s.language;
     root.style.setProperty('--font-scale', String(s.fontScale));
     const meta = document.querySelector('meta[name="theme-color"]');
     if (meta) meta.content = getComputedStyle(root).getPropertyValue('--c-bg').trim() || '#0a0807';
-  }, [s.theme, s.accent, s.motion, s.language, s.fontScale]);
+  }, [s.theme, s.accent, s.motion, s.language, s.fontScale, s.grain]);
 
   useEffect(() => {
     sounds.configure({ enabled: s.sound, volume: s.volume, musicVolume: s.musicVolume, music: s.music });
@@ -63,7 +66,7 @@ function GlobalEffects() {
 }
 
 function Ambience() {
-  const { vignette, grain, torch } = useGame(useShallow((s) => ({ vignette: s.settings.vignette, grain: s.settings.grain, torch: s.settings.torch })));
+  const { vignette, torch } = useGame(useShallow((s) => ({ vignette: s.settings.vignette, torch: s.settings.torch })));
   return (
     <>
       <div className="fixed inset-0 z-0 pointer-events-none" style={{ background: 'radial-gradient(ellipse at 50% -10%, rgb(var(--glow-bg) / .55), transparent 60%), var(--c-bg)' }} />
@@ -75,7 +78,6 @@ function Ambience() {
       )}
       <ParticleField />
       {vignette && <div className="vignette" />}
-      {grain && <div className="grain" />}
     </>
   );
 }
@@ -99,6 +101,8 @@ export default function App() {
           <Route path="mission/:id" element={<Mission />} />
           <Route path="quests" element={<Quests />} />
           <Route path="arena" element={<ArenaHub />} />
+          <Route path="grimoire" element={<Grimoire />} />
+          <Route path="library" element={<TomeLibrary />} />
           <Route path="ranking" element={<Ranking />} />
           <Route path="shop" element={<Shop />} />
           <Route path="glories" element={<Glories />} />
@@ -108,6 +112,7 @@ export default function App() {
         <Route path="mission/:missionId/level/:levelId" element={<Level />} />
         <Route path="arena/play/:diff" element={<ArenaPlay />} />
         <Route path="story/:sceneId" element={<Story />} />
+        <Route path="tome/:missionId/:conceptId" element={<Tome />} />
         <Route path="*" element={<Layout />}>
           <Route path="*" element={<Home />} />
         </Route>

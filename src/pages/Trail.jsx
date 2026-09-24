@@ -12,9 +12,11 @@ import Character from '../components/Character';
 import { Decor, MapFrame, Compass, Landmark, Track, River, Bridge, ZeroGround, INK } from '../components/MapArt';
 import MapLife, { MapSky } from '../components/MapLife';
 import { skyAt } from '../utils/sky';
-import { Sparkles, Gem, Lock, Check, Play, Coins, Star, ChevronRight } from 'lucide-react';
+import { Sparkles, Gem, Lock, Check, Play, Coins, Star, ChevronRight, BookOpen } from 'lucide-react';
 import { Button, cx } from '../components/ui';
 import { ROMAN, missionIcon, kindIcon } from '../components/gameIcons';
+import { SPELL_BY_ID, MASTERY_GOAL, masteryOf, effectKind } from '../data/spells';
+import { spellIcon, EFFECT_COLOR } from '../components/spellIcons';
 
 const DECOR = buildDecor();
 const LIFE = buildLife(DECOR);
@@ -22,7 +24,7 @@ const LIFE = buildLife(DECOR);
 // posição (p) de um passo no percurso: 0 = vila; unidade m ocupa o trecho [m-1, m]
 function stepP(unit, node) {
   const m = unit.mission.id;
-  const walk = unit.nodes.filter((n) => n.kind === 'lesson' || n.kind === 'level');
+  const walk = unit.nodes.filter((n) => n.kind !== 'boss' && n.kind !== 'story');
   if (node.kind === 'story') return m;
   if (node.kind === 'boss') return m - 1 + 0.93;
   const k = walk.findIndex((n) => n.key === node.key);
@@ -63,7 +65,7 @@ export default function Trail() {
     const cur = trail.current;
     if (!cur) return 7;
     const u = trail.units.find((x) => x.mission.id === cur.mission.id);
-    const walk = u.nodes.filter((n) => n.kind === 'lesson' || n.kind === 'level');
+    const walk = u.nodes.filter((n) => n.kind !== 'boss' && n.kind !== 'story');
     const m = cur.mission.id;
     if (cur.kind === 'story') return m;
     if (cur.kind === 'boss') return m - 1 + wpT(walk.length, walk.length - 1);
@@ -210,7 +212,7 @@ export default function Trail() {
 
           {/* paradas do caminho */}
           {trail.units.map((unit) => {
-            const walk = unit.nodes.filter((n) => n.kind === 'lesson' || n.kind === 'level');
+            const walk = unit.nodes.filter((n) => n.kind !== 'boss' && n.kind !== 'story');
             const color = biomeColor(unit.mission.biome);
             return walk.map((node, k) => {
               const [x, y] = pointAt(unit.mission.id - 1 + wpT(walk.length, k));
@@ -271,7 +273,7 @@ export default function Trail() {
         <AnimatePresence>
           {popup && (() => {
             const { node, unit } = popup;
-            const walk = unit.nodes.filter((n) => n.kind === 'lesson' || n.kind === 'level');
+            const walk = unit.nodes.filter((n) => n.kind !== 'boss' && n.kind !== 'story');
             const k = walk.findIndex((n) => n.key === node.key);
             const [x, y] = pointAt(unit.mission.id - 1 + wpT(walk.length, k));
             const locked = !node.available;
@@ -286,9 +288,21 @@ export default function Trail() {
                   className="card-pro absolute z-30 w-56 p-4 text-center !border-accent/60 shadow-[0_18px_40px_-12px_rgba(0,0,0,.85)]"
                   style={{ ...pct(x, y), transform: `translate(${x < 130 ? '-18%' : x > 270 ? '-82%' : '-50%'}, 26px)` }}
                 >
-                  <div className="eyebrow !text-[9.5px] text-dim">{node.kind === 'lesson' ? t('lesson') : t('stage')}</div>
+                  <div className="eyebrow !text-[9.5px] text-dim">{node.kind === 'concept' ? t('concept') : t('stage')}</div>
                   <div className="font-display font-extrabold leading-tight mt-1">{l(node.title)}</div>
-                  <div className="text-xs text-dim mt-1.5 flex items-center justify-center gap-1">{locked ? <><Lock size={12} />{t('trail_locked')}</> : node.kind === 'lesson' ? `${node.data.pages.length} ${t('pages')} · +15 XP` : <>{`+${node.data.xpReward} XP · +${node.data.goldReward}`}<Coins size={12} className="text-accent2" /></>}</div>
+                  <div className="text-xs text-dim mt-1.5 flex items-center justify-center gap-1">{locked ? <><Lock size={12} />{t('trail_locked')}</> : node.kind === 'concept' ? `${node.pages} ${t('pages')} + ${node.count} ${t('challenges')} · +${node.data.xpReward + 15} XP` : <>{`+${node.data.xpReward} XP · +${node.data.goldReward}`}<Coins size={12} className="text-accent2" /></>}</div>
+                  {!locked && node.kind === 'concept' && (() => {
+                    const sp = SPELL_BY_ID[`${node.mission.id}-${node.levelId}`];
+                    if (!sp) return null;
+                    const m = masteryOf(p, sp), c = EFFECT_COLOR[effectKind(sp.effect)], SI = spellIcon(sp.icon);
+                    return (
+                      <div className="mt-2.5 text-left rounded-lg border border-line bg-black/20 px-2.5 py-2">
+                        <div className="flex items-center gap-1.5 text-[10px] font-extrabold uppercase tracking-[0.1em] text-dim"><SI size={12} style={{ color: c }} /><span className="truncate flex-1">{l(sp.name)}</span><span className="tabular-nums text-accent2">{m}/{MASTERY_GOAL}</span></div>
+                        <div className="h-1 rounded-full bg-black/40 mt-1.5 overflow-hidden"><div className="h-full rounded-full" style={{ width: `${(m / MASTERY_GOAL) * 100}%`, background: c }} /></div>
+                      </div>
+                    );
+                  })()}
+                  {!locked && node.kind === 'concept' && <button onClick={() => { sounds.click(); setPopup(null); nav(`/tome/${node.mission.id}/${node.levelId}`); }} className="mt-2 w-full text-[11px] font-extrabold uppercase tracking-[0.12em] text-accent2 hover:underline inline-flex items-center justify-center gap-1.5"><BookOpen size={12} />{t('tome_open')}</button>}
                   {!locked && <Button size="sm" className="mt-2.5 w-full" onClick={() => { setPopup(null); go(node); }}>{node.done ? t('replay') : t('start')}</Button>}
                 </motion.div>
               </>
@@ -334,7 +348,7 @@ function LocationSheet({ unit, onClose, onGo }) {
             {unit.nodes.map((node) => {
               const locked = !node.available;
               const label = node.kind === 'boss' ? l(MONSTERS[m.boss].name) : node.kind === 'story' ? t('story') : l(node.title);
-              const kind = node.kind === 'lesson' ? t('lesson') : node.kind === 'boss' ? t('boss') : node.kind === 'story' ? t('story') : t('stage');
+              const kind = node.kind === 'concept' ? t('concept') : node.kind === 'boss' ? t('boss') : node.kind === 'story' ? t('story') : t('stage');
               return (
                 <button key={node.key} disabled={locked} onClick={() => onGo(node)} className={cx('group w-full flex items-center gap-3 p-3 rounded-xl border text-left transition-colors', locked ? 'border-line opacity-45' : node.done ? 'border-accent/40 bg-accent/[0.07]' : 'border-line bg-surface hover:border-accent/60')}>
                   {(() => { const Ic = node.done ? Check : locked ? Lock : kindIcon(node.kind); return <div className={cx('w-10 h-10 shrink-0 rounded-lg border flex items-center justify-center', node.done ? 'bg-accent text-on-accent border-accent' : 'bg-black/25 border-line text-accent2')}><Ic size={18} strokeWidth={node.done ? 2.8 : 1.9} /></div>; })()}

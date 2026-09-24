@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useGame, useProfile } from '../store/useGame';
@@ -35,6 +35,8 @@ function Player({ id, scene }) {
   const then = params.get('then') || '/trail';
   const p = useProfile();
   const { setStoryFlag, storyReward, addShard, finishScene } = useGame.getState();
+  // cena já vista antes de abrir: é um replay — as escolhas anteriores ficam como estão e não há recompensas
+  const replay = useRef(!!p.story.seen[id]).current;
 
   const [queue, setQueue] = useState(scene.steps);
   const [idx, setIdx] = useState(0);
@@ -137,12 +139,20 @@ function Player({ id, scene }) {
     setIdx(idx + 1);
   };
 
+  // replay: reaproveita a escolha já feita, sem gravar nada de novo
+  const chosenBefore = (st) => st.options.find((o) => o.set && Object.entries(o.set).every(([k, v]) => p.story.flags[k] === v)) || st.options.find((o) => !o.needGold) || st.options[0];
+  const pickReplay = (opt) => {
+    sounds.select();
+    if (opt.reply?.length) splice(opt.reply);
+    setIdx(idx + 1);
+  };
+
   const skip = () => {
     sounds.click();
     for (let i = idx; i < queue.length; i++) {
       const s = queue[i];
       if (s.t === 'shard') addShard(s.n);
-      if (s.t === 'choice') {
+      if (s.t === 'choice' && !replay) {
         const o = s.options[0];
         if (o?.set) Object.entries(o.set).forEach(([k, v]) => setStoryFlag(k, v));
         for (const r of o?.reply || []) if (r.t === 'shard') addShard(r.n);
@@ -152,7 +162,7 @@ function Player({ id, scene }) {
   };
 
   const onPuzzleAnswer = ({ correct }) => {
-    if (correct) storyReward({ xp: 8, gold: 4 });
+    if (correct && !replay) storyReward({ xp: 8, gold: 4 });
     setPuzzle((pz) => ({ ...pz, result: correct }));
   };
   const onPuzzleNext = () => {
@@ -178,6 +188,8 @@ function Player({ id, scene }) {
     <div className="fixed inset-0 z-10 bg-black flex flex-col select-none" onClick={tap}>
       <div className={cx('relative flex-1 min-h-0', shaking && 'anim-shake')}>
         <Backdrop kind={scene.bg} dim={step?.t === 'narr'} />
+
+        {replay && <div className="absolute top-12 inset-x-0 z-20 flex justify-center pointer-events-none"><span className="px-3 py-1 rounded-full bg-black/60 border border-white/15 text-[10px] font-extrabold uppercase tracking-[0.14em] text-white/80">{t('replay_note')}</span></div>}
 
         {/* progresso + pular */}
         <div className="absolute top-0 inset-x-0 z-20 p-3 flex items-center gap-3">
@@ -224,7 +236,18 @@ function Player({ id, scene }) {
           {step?.t === 'choice' && (
             <div className="space-y-2 pt-1">
               <div className="text-[11px] font-black uppercase tracking-[0.25em] text-accent mb-1">{t('your_choice')}</div>
-              {step.options.map((o) => {
+              {replay && (() => {
+                const c = chosenBefore(step);
+                return (
+                  <>
+                    <div className="w-full text-left p-3.5 rounded-2xl border-2 border-accent bg-accent/10 font-display font-extrabold text-sm sm:text-base">
+                      <span className="eyebrow !text-[9.5px] text-accent block mb-1">{t('choice_kept')}</span>{sub(l(c.text))}
+                    </div>
+                    <Button className="w-full mt-2" onClick={() => pickReplay(c)}>{t('continue')} →</Button>
+                  </>
+                );
+              })()}
+              {!replay && step.options.map((o) => {
                 const off = o.needGold && p.gold < o.needGold;
                 return (
                   <motion.button key={o.id} whileTap={{ scale: 0.98 }} disabled={off} onClick={() => pick(o)} className={cx('w-full text-left p-3.5 rounded-2xl border-2 border-b-4 font-display font-extrabold text-sm sm:text-base', off ? 'border-line opacity-40' : 'border-line bg-surface hover:border-accent')}>

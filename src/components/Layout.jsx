@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { NavLink, Outlet, useLocation, Link } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
-import { House, Map, ScrollText, Swords, Trophy, ShoppingBag, Medal, BedDouble, Heart, Coins, Flame, Hourglass } from 'lucide-react';
+import { House, Map, ScrollText, Swords, Trophy, ShoppingBag, Medal, BedDouble, BookMarked, Heart, Coins, Flame, Hourglass } from 'lucide-react';
 import { useGame, useProfile, HEART_REGEN_MS } from '../store/useGame';
 import { levelProgress, rankFor } from '../data/characters';
 import { useT } from '../i18n';
@@ -15,6 +15,7 @@ const NAV = [
   { to: '/trail', Icon: Map, key: 'nav_trail', mobile: true },
   { to: '/quests', Icon: ScrollText, key: 'nav_quests' },
   { to: '/arena', Icon: Swords, key: 'nav_arena', mobile: true },
+  { to: '/grimoire', Icon: BookMarked, key: 'nav_grimoire', mobile: true },
   { to: '/ranking', Icon: Trophy, key: 'nav_ranking', mobile: true },
   { to: '/shop', Icon: ShoppingBag, key: 'nav_shop' },
   { to: '/glories', Icon: Medal, key: 'nav_glories' },
@@ -82,7 +83,7 @@ export default function Layout() {
   return (
     <div className="relative z-10 min-h-screen lg:pl-64">
       {/* Barra lateral — desktop */}
-      <aside className="hidden lg:flex fixed inset-y-0 left-0 w-64 flex-col p-4 gap-4 border-r border-line bg-bg z-30">
+      <aside className="tex hidden lg:flex fixed inset-y-0 left-0 w-64 flex-col p-4 gap-4 border-r border-line bg-bg z-30">
         <Link to="/" className="block text-center pt-2" onClick={() => sounds.click()}>
           <div className="font-fancy text-[26px] font-black text-accent2 leading-none tracking-wide">Algebrion</div>
           <div className="flex items-center gap-2 mt-2 text-dim"><span className="h-px flex-1 bg-line" /><span className="text-[9px] tracking-[0.28em] uppercase font-extrabold">{t('tagline')}</span><span className="h-px flex-1 bg-line" /></div>
@@ -114,7 +115,7 @@ export default function Layout() {
       </aside>
 
       {/* HUD superior */}
-      <header className="sticky top-0 z-30 border-b border-line bg-bg/95 backdrop-blur">
+      <header className="tex sticky top-0 z-30 border-b border-line bg-bg/95 backdrop-blur">
         <div className="max-w-3xl mx-auto px-4 py-2.5 flex items-center justify-between gap-3">
           <Hud />
           <Link to="/settings" className="lg:hidden">
@@ -132,7 +133,7 @@ export default function Layout() {
       </main>
 
       {/* Navegação inferior — mobile */}
-      <nav className="lg:hidden fixed bottom-0 inset-x-0 z-30 border-t border-line bg-bg pb-[env(safe-area-inset-bottom)]">
+      <nav className="tex lg:hidden fixed bottom-0 inset-x-0 z-30 border-t border-line bg-bg pb-[env(safe-area-inset-bottom)]">
         <div className="flex justify-around px-2 py-1.5">
           {NAV.filter((n) => n.mobile).map((n) => (
             <NavLink

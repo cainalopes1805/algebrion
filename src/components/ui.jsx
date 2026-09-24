@@ -61,7 +61,7 @@ export function ProgressBar({ pct, color = 'accent', height = 'h-2.5', className
 
 export function Segmented({ value, onChange, options, className = '' }) {
   return (
-    <div className={cx('inline-flex flex-wrap gap-1 p-1 rounded-xl bg-black/30 border border-line', className)}>
+    <div className={cx("tex inline-flex flex-wrap gap-1 p-1 rounded-xl bg-black/30 border border-line", className)}>
       {options.map((o) => (
         <button
           key={o.value}

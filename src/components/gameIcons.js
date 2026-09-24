@@ -4,7 +4,7 @@ import { Library, FlaskConical, Shield, ShieldPlus, Eye, Anvil, Waypoints, Crown
 export const ROMAN = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X'];
 export const MISSION_ICON = { 1: Library, 2: FlaskConical, 3: Shield, 4: Eye, 5: Anvil, 6: Waypoints, 7: Crown };
 export const missionIcon = (id) => MISSION_ICON[id] || Sparkles;
-export const KIND_ICON = { lesson: BookOpen, level: Swords, boss: Skull, story: ScrollText };
+export const KIND_ICON = { concept: BookOpen, lesson: BookOpen, level: Swords, boss: Skull, story: ScrollText };
 export const kindIcon = (kind) => KIND_ICON[kind] || Swords;
 export const QUEST_ICON = { levels: Castle, correct: Target, xp: Star, lessons: BookOpen, arena: Swords, combo: Flame, perfect: Gem };
 

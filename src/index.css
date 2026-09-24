@@ -78,6 +78,7 @@ button:disabled { cursor: not-allowed; }
   border-radius: 1.25rem;
 }
 .panel-gold { border-color: color-mix(in oklab, var(--c-accent) 70%, var(--c-line)); }
+@layer components {
 /* Superfícies refinadas (tela inicial e navegação): borda fina, brilho no topo, sombra suave */
 .card-pro {
   position: relative;
@@ -98,6 +99,7 @@ button:disabled { cursor: not-allowed; }
 .btn-cta:hover { filter: brightness(1.07); transform: translateY(-1px); }
 .btn-cta:active { transform: translateY(1px); filter: brightness(.96); }
 .eyebrow { font-size: 10.5px; font-weight: 800; letter-spacing: .24em; text-transform: uppercase; }
+}
 .text-gold-grad { color: var(--c-accent2); }
 .btn-primary {
   background: var(--c-accent);
@@ -125,23 +127,24 @@ button:disabled { cursor: not-allowed; }
   background: radial-gradient(ellipse at 50% 40%, transparent 45%, rgb(0 0 0 / .5) 100%);
 }
 [data-theme="parchment"] .vignette { background: radial-gradient(ellipse at 50% 40%, transparent 50%, rgb(90 55 10 / .35) 100%); }
-/* Textura de pergaminho: fibras finas + manchas de envelhecimento + bordas queimadas */
-.grain { position: fixed; inset: 0; pointer-events: none; z-index: 41; }
-.grain::before, .grain::after { content: ""; position: absolute; inset: 0; }
-.grain::before {
-  opacity: .55; mix-blend-mode: soft-light;
-  background-image:
-    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='300' height='300'><filter id='f' x='0' y='0' width='100%' height='100%'><feTurbulence type='fractalNoise' baseFrequency='.012 .5' numOctaves='3' seed='7' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 .45  0 0 0 0 .32  0 0 0 0 .16  0 0 0 1.6 -.45'/></filter><rect width='100%' height='100%' filter='url(%23f)'/></svg>"),
-    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n' x='0' y='0' width='100%' height='100%'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' seed='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 .5  0 0 0 0 .38  0 0 0 0 .2  0 0 0 1.4 -.3'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+/* Textura de pergaminho: cada painel, cartão e botão ganha a sua própria textura de papel.
+   A imagem é cinza neutra e se mistura ao que já existe no elemento (hard-light): ela altera a superfície, não a cor. */
+:root {
+  --tex-1: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='320' height='320'><filter id='t1' x='0' y='0' width='100%' height='100%' color-interpolation-filters='sRGB'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' seed='3' result='a'/><feTurbulence type='fractalNoise' baseFrequency='.018 .2' numOctaves='2' seed='8' result='b'/><feTurbulence type='fractalNoise' baseFrequency='.012' numOctaves='3' seed='12' result='c'/><feComposite in='a' in2='b' operator='arithmetic' k1='0' k2='.66' k3='.14' k4='0' result='ab'/><feComposite in='ab' in2='c' operator='arithmetic' k1='0' k2='.76' k3='.3' k4='0' result='m'/><feColorMatrix in='m' type='matrix' values='.33 .33 .33 0 0 .33 .33 .33 0 0 .33 .33 .33 0 0 0 0 0 0 1'/><feComponentTransfer><feFuncR type='linear' slope='2.1' intercept='-.55'/><feFuncG type='linear' slope='2.1' intercept='-.55'/><feFuncB type='linear' slope='2.1' intercept='-.55'/></feComponentTransfer></filter><rect width='100%' height='100%' filter='url(%23t1)'/></svg>");
+  --tex-2: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='320' height='320'><filter id='t2' x='0' y='0' width='100%' height='100%' color-interpolation-filters='sRGB'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' seed='17' result='a'/><feTurbulence type='fractalNoise' baseFrequency='.022 .17' numOctaves='2' seed='22' result='b'/><feTurbulence type='fractalNoise' baseFrequency='.009' numOctaves='3' seed='26' result='c'/><feComposite in='a' in2='b' operator='arithmetic' k1='0' k2='.66' k3='.14' k4='0' result='ab'/><feComposite in='ab' in2='c' operator='arithmetic' k1='0' k2='.76' k3='.3' k4='0' result='m'/><feColorMatrix in='m' type='matrix' values='.33 .33 .33 0 0 .33 .33 .33 0 0 .33 .33 .33 0 0 0 0 0 0 1'/><feComponentTransfer><feFuncR type='linear' slope='2.1' intercept='-.55'/><feFuncG type='linear' slope='2.1' intercept='-.55'/><feFuncB type='linear' slope='2.1' intercept='-.55'/></feComponentTransfer></filter><rect width='100%' height='100%' filter='url(%23t2)'/></svg>");
+  --tex-3: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='320' height='320'><filter id='t3' x='0' y='0' width='100%' height='100%' color-interpolation-filters='sRGB'><feTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='3' seed='41' result='a'/><feTurbulence type='fractalNoise' baseFrequency='.015 .22' numOctaves='2' seed='46' result='b'/><feTurbulence type='fractalNoise' baseFrequency='.015' numOctaves='3' seed='50' result='c'/><feComposite in='a' in2='b' operator='arithmetic' k1='0' k2='.66' k3='.14' k4='0' result='ab'/><feComposite in='ab' in2='c' operator='arithmetic' k1='0' k2='.76' k3='.3' k4='0' result='m'/><feColorMatrix in='m' type='matrix' values='.33 .33 .33 0 0 .33 .33 .33 0 0 .33 .33 .33 0 0 0 0 0 0 1'/><feComponentTransfer><feFuncR type='linear' slope='2.1' intercept='-.55'/><feFuncG type='linear' slope='2.1' intercept='-.55'/><feFuncB type='linear' slope='2.1' intercept='-.55'/></feComponentTransfer></filter><rect width='100%' height='100%' filter='url(%23t3)'/></svg>");
 }
-.grain::after {
-  opacity: .5; mix-blend-mode: multiply;
-  background-image:
-    radial-gradient(ellipse at 50% 50%, transparent 55%, rgb(120 70 20 / .45) 100%),
-    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='700' height='700'><filter id='s' x='0' y='0' width='100%' height='100%'><feTurbulence type='fractalNoise' baseFrequency='.004' numOctaves='4' seed='11' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 .55  0 0 0 0 .38  0 0 0 0 .18  0 0 0 2.4 -.85'/></filter><rect width='100%' height='100%' filter='url(%23s)'/></svg>");
+@layer components {
+  [data-grain="on"] :is(.card-pro, .panel, .btn-primary, .btn-ghost, .btn-danger, .btn-cta, .tex) { position: relative; }
+  [data-grain="on"] :is(.card-pro, .panel, .btn-primary, .btn-ghost, .btn-danger, .btn-cta, .tex)::after {
+    content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; z-index: 1;
+    background-image: var(--tex-1); background-size: 320px 320px;
+    mix-blend-mode: hard-light; opacity: .24;
+  }
+  [data-grain="on"] :is(.card-pro, .panel, .btn-primary, .btn-ghost, .btn-danger, .btn-cta, .tex):nth-child(3n + 2)::after { background-image: var(--tex-2); background-position: 90px 40px; }
+  [data-grain="on"] :is(.card-pro, .panel, .btn-primary, .btn-ghost, .btn-danger, .btn-cta, .tex):nth-child(3n)::after { background-image: var(--tex-3); background-position: 200px 120px; }
+  [data-grain="on"] :is(.btn-primary, .btn-ghost, .btn-danger, .btn-cta)::after { opacity: .18; }
 }
-[data-theme="parchment"] .grain::before { opacity: .8; mix-blend-mode: multiply; }
-[data-theme="parchment"] .grain::after { opacity: .65; }
 .torch-glow {
   position: fixed; pointer-events: none; z-index: 1; width: 60vmax; height: 60vmax; border-radius: 50%;
   background: radial-gradient(circle, rgb(var(--glow) / .14), transparent 60%);
@@ -225,3 +228,41 @@ button:disabled { cursor: not-allowed; }
 .stepbob { animation: stepbob .275s ease-in-out infinite alternate; }
 .idlesway { transform-box: fill-box; transform-origin: 50% 100%; animation: idlesway 3.2s ease-in-out infinite alternate; }
 .swing { transform-box: fill-box; transform-origin: 0 100%; animation: swingarm .8s ease-in-out infinite alternate; }
+
+/* ───────────── O Tomo dos Feitiços (biblioteca medieval) ───────────── */
+.font-book { font-family: "EB Garamond", Georgia, "Times New Roman", serif; }
+.tome-scene { position: fixed; inset: 0; z-index: 10; overflow-y: auto; background: radial-gradient(ellipse at 50% 30%, #3a2818 0%, #1a100a 60%, #0c0805 100%); }
+.tome-glow { position: fixed; width: 46vmax; height: 46vmax; border-radius: 50%; pointer-events: none; background: radial-gradient(circle, rgb(255 170 80 / .22), transparent 62%); animation: torch 3.6s ease-in-out infinite; }
+.tome-cover {
+  position: relative; padding: 14px; border-radius: 18px;
+  background: linear-gradient(145deg, #4a2c16 0%, #2c1a0d 55%, #3a2412 100%);
+  box-shadow: 0 30px 60px -18px rgb(0 0 0 / .85), inset 0 0 0 2px #6b4a24, inset 0 0 0 5px #24140a, inset 0 0 0 6px #b98d3e;
+}
+.tome-spread { position: relative; display: grid; grid-template-columns: 1fr; border-radius: 6px; perspective: 1800px; }
+@media (min-width: 900px) { .tome-spread.two { grid-template-columns: 1fr 1fr; } }
+.tome-page {
+  position: relative; min-height: 520px; padding: 30px 30px 26px; color: #2b1d10; overflow: hidden;
+  background:
+    radial-gradient(ellipse at 50% 50%, transparent 55%, rgb(120 80 30 / .28) 100%),
+    linear-gradient(180deg, #eadab5, #e2cfa4);
+  font-family: "EB Garamond", Georgia, serif;
+}
+.tome-page::after {
+  content: ""; position: absolute; inset: 0; pointer-events: none; background-image: var(--tex-1); background-size: 320px 320px;
+  mix-blend-mode: hard-light; opacity: .42;
+}
+.tome-page.left { border-radius: 6px 0 0 6px; box-shadow: inset -26px 0 30px -22px rgb(60 30 5 / .55); }
+.tome-page.right { border-radius: 0 6px 6px 0; box-shadow: inset 26px 0 30px -22px rgb(60 30 5 / .55); }
+.tome-page.single { border-radius: 6px; }
+.tome-page > * { position: relative; z-index: 2; }
+.tome-h1 { font-family: "Cinzel Decorative", serif; font-weight: 900; color: #6e2a14; line-height: 1.12; }
+.tome-eyebrow { font-family: "Cinzel Decorative", serif; font-size: 10.5px; letter-spacing: .22em; text-transform: uppercase; color: #8a6a34; }
+.tome-p { font-size: 18.5px; line-height: 1.55; font-weight: 500; }
+.tome-drop::first-letter { font-family: "Cinzel Decorative", serif; font-weight: 900; color: #7a2410; float: left; font-size: 3.6em; line-height: .82; padding: 4px 8px 0 0; text-shadow: 1px 1px 0 #d9b56a; }
+.tome-rule { height: 14px; background: center / contain no-repeat url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='260' height='14' viewBox='0 0 260 14'><path d='M0 7 H108 M152 7 H260' stroke='%238a6a34' stroke-width='1' fill='none'/><path d='M130 1 L136 7 L130 13 L124 7Z' fill='%23a32a14'/><circle cx='116' cy='7' r='2' fill='%238a6a34'/><circle cx='144' cy='7' r='2' fill='%238a6a34'/></svg>"); }
+.tome-plate { position: relative; padding: 14px; border-radius: 10px; color: var(--c-ink); background: linear-gradient(160deg, #201811, #120d09); box-shadow: inset 0 0 0 1px #6b4a24, inset 0 0 0 4px #150f0a, inset 0 0 0 5px #b98d3e, 0 8px 18px -8px rgb(0 0 0 / .6); }
+.tome-ribbon { position: absolute; top: -6px; right: 34px; width: 22px; height: 64px; background: linear-gradient(180deg, #a32a14, #7a1c0c); clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 82%, 0 100%); z-index: 3; filter: drop-shadow(0 3px 2px rgb(0 0 0 / .4)); }
+.tome-seal { width: 62px; height: 62px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #c8402a, #7a1c0c 70%); box-shadow: inset 0 0 0 3px #9a2a16, 0 4px 8px rgb(0 0 0 / .4); display: flex; align-items: center; justify-content: center; color: #f3d9a4; }
+@keyframes inkin { from { clip-path: inset(0 100% 0 0); opacity: .2 } to { clip-path: inset(0 0 0 0); opacity: 1 } }
+@keyframes mote { 0% { transform: translate(0, 0); opacity: 0 } 20% { opacity: .55 } 100% { transform: translate(var(--mx), -120px); opacity: 0 } }
+.ink-in { animation: inkin .9s ease-out both; }

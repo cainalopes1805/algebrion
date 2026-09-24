@@ -55,7 +55,7 @@ export default function Home() {
   const heroTitle = cur ? (cur.kind === 'boss' ? l(MONSTERS[cur.mission.boss].name) : cur.kind === 'story' ? `${t('story')}: ${l(cur.mission.title)}` : l(cur.title)) : t('all_done');
   const MissionIcon = cur ? MISSION_ICON[cur.mission.id] || Sparkles : Crown;
   const KindIcon = cur ? KIND_ICON[cur.kind] || Flag : Flag;
-  const kindLabel = cur ? (cur.kind === 'lesson' ? t('lesson') : cur.kind === 'boss' ? t('boss') : cur.kind === 'story' ? t('story') : t('stage')) : '';
+  const kindLabel = cur ? (cur.kind === 'concept' ? t('concept') : cur.kind === 'boss' ? t('boss') : cur.kind === 'story' ? t('story') : t('stage')) : '';
   const tint = `color-mix(in oklab, ${color} 45%, white)`;
 
   return (
@@ -75,7 +75,7 @@ export default function Home() {
       </div>
 
       {/* Próxima missão — foco */}
-      <motion.section initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} className="relative overflow-hidden rounded-2xl p-5 sm:p-7 border shadow-[0_18px_40px_-18px_rgba(0,0,0,.8)]" style={{ background: `linear-gradient(125deg, color-mix(in oklab, ${color} 34%, #0b1016) 0%, #0f161d 62%, #0b1016 100%)`, borderColor: `color-mix(in oklab, ${color} 45%, #1a222b)` }}>
+      <motion.section initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} className="tex relative overflow-hidden rounded-2xl p-5 sm:p-7 border shadow-[0_18px_40px_-18px_rgba(0,0,0,.8)]" style={{ background: `linear-gradient(125deg, color-mix(in oklab, ${color} 34%, #0b1016) 0%, #0f161d 62%, #0b1016 100%)`, borderColor: `color-mix(in oklab, ${color} 45%, #1a222b)` }}>
         <div className="absolute -right-12 -top-16 w-72 h-72 rounded-full pointer-events-none" style={{ background: `radial-gradient(circle, ${color}55, transparent 68%)` }} />
         <div className="absolute inset-x-0 top-0 h-px" style={{ background: `linear-gradient(90deg, transparent, ${color}, transparent)` }} />
         <div className="relative flex items-center gap-2">

@@ -4,6 +4,10 @@ import { dayKey, weekKey, daysBetween } from '../utils/rng';
 import { levelFromXp } from '../data/characters';
 import { ACHIEVEMENTS, ACH_BY_ID, CONSUMABLES, COSMETIC_BY_ID, questsForDay } from '../data/economy';
 import { MISSIONS } from '../data/content';
+import { MASTERY, MASTERY_GOAL, MAX_SLOTS, SPELL_BY_ID } from '../data/spells';
+
+// Versão do currículo: ao mudar a estrutura de fases/lições, a trilha (e a história) recomeça; ouro, XP, itens e cosméticos ficam.
+export const CURRICULUM_VERSION = 2;
 
 const KEY = 'algebrion_v3';
 const LEGACY_KEY = 'algebrion_storage_v2';
@@ -53,6 +57,8 @@ const emptyProfile = (name = 'Aprendiz', hero = 'mage') => ({
   quests: { day: null, list: [] },
   flags: {},
   story: { seen: {}, flags: {}, shards: [] },
+  curriculum: CURRICULUM_VERSION,
+  skills: { mastery: {}, equipped: [] }, // maestria por conceito ("m-c") e feitiços equipados
   stats: { correct: 0, wrong: 0, bestCombo: 0, perfect: 0, arenaBest: 0, arenaRuns: 0, goldEarned: 0, levelsCleared: 0 },
 });
 
@@ -74,16 +80,31 @@ function migrateLegacy() {
       np.xp = op.xp ?? 0;
       np.streak = op.streak ?? 0;
       np.bestStreak = np.streak;
-      np.unlockedMissions = op.unlockedMissions?.length ? op.unlockedMissions : [1];
-      np.completedLevels = Object.fromEntries(
-        Object.entries(op.completedLevels || {}).map(([k, v]) => [k, { stars: v.stars || 1, count: 1, at: v.completedAt || Date.now() }]),
-      );
       profiles[np.id] = np;
     }
     return { settings, profiles, activeId: (old.activeProfileId && profiles[old.activeProfileId] ? old.activeProfileId : Object.keys(profiles)[0]) };
   } catch {
     return null;
   }
+}
+
+// Completa campos novos e, se o currículo mudou, reinicia só a trilha (fases, lições, história e maestria)
+function normalizeProfile(base, p) {
+  const merged = { ...base, ...p, stats: { ...base.stats, ...p.stats }, equipped: { ...base.equipped, ...p.equipped }, items: { ...base.items, ...p.items }, story: { ...base.story, ...p.story }, skills: { ...base.skills, ...p.skills } };
+  if (p.curriculum === CURRICULUM_VERSION) return merged;
+  return { ...merged, curriculum: CURRICULUM_VERSION, unlockedMissions: [1], completedLevels: {}, lessonsRead: {}, story: { seen: {}, flags: {}, shards: [] }, skills: { mastery: {}, equipped: [] } };
+}
+
+// Soma pontos de maestria a um conceito; ao chegar à meta, o feitiço é aprendido (e equipado, se houver espaço)
+function addMasteryTo(p, missionId, conceptId, pts) {
+  const id = `${missionId}-${conceptId}`;
+  if (!SPELL_BY_ID[id] || pts <= 0) return { p, learned: null };
+  const before = p.skills.mastery[id] || 0;
+  const after = Math.min(MASTERY_GOAL, before + pts);
+  let equipped = p.skills.equipped;
+  const learned = before < MASTERY_GOAL && after >= MASTERY_GOAL ? id : null;
+  if (learned && equipped.length < MAX_SLOTS) equipped = [...equipped, id];
+  return { p: { ...p, skills: { ...p.skills, mastery: { ...p.skills.mastery, [id]: after }, equipped } }, learned };
 }
 
 function load() {
@@ -93,9 +114,7 @@ function load() {
       const data = JSON.parse(raw);
       if (data.profiles && Object.keys(data.profiles).length) {
         const base = emptyProfile();
-        const profiles = Object.fromEntries(
-          Object.entries(data.profiles).map(([id, p]) => [id, { ...base, ...p, stats: { ...base.stats, ...p.stats }, equipped: { ...base.equipped, ...p.equipped }, items: { ...base.items, ...p.items }, story: { ...base.story, ...p.story } }]),
-        );
+        const profiles = Object.fromEntries(Object.entries(data.profiles).map(([id, p]) => [id, normalizeProfile(base, p)]));
         return {
           settings: { ...DEFAULT_SETTINGS, ...data.settings },
           profiles,
@@ -180,6 +199,7 @@ export const useGame = create((set, get) => {
     let np = result.p || cur;
     const events = [];
     if (result.leveledTo) events.push({ type: 'levelup', level: result.leveledTo });
+    if (result.learned) events.push({ type: 'spell', id: result.learned });
     const ach = checkAchievements(np);
     np = ach.p;
     for (const id of ach.unlocked) events.push({ type: 'achievement', id });
@@ -278,7 +298,7 @@ export const useGame = create((set, get) => {
       mutate((p) => (p.items.hint > 0 ? { p: { ...p, items: { ...p.items, hint: p.items.hint - 1 } }, out: true } : { out: false })),
     addReward: (reward) => mutate((p) => grant(p, reward)),
 
-    completeLevel: ({ missionId, levelId, mistakes, xp, gold }) =>
+    completeLevel: ({ missionId, levelId, mistakes, xp, gold, masteryGain = 0, conceptId = null }) =>
       mutate((p) => {
         const key = `${missionId}-${levelId}`;
         const prev = p.completedLevels[key];
@@ -305,7 +325,8 @@ export const useGame = create((set, get) => {
         np = bumpQuest(np, 'levels', 1);
         if (mistakes === 0) np = bumpQuest(np, 'perfect', 1);
         const g = grant(np, { xp: gainXp, gold: gainGold });
-        return { p: g.p, leveledTo: g.leveledTo, out: { stars, xp: gainXp, gold: gainGold, first, potion, unlockedMission, boss } };
+        const ms = conceptId ? addMasteryTo(g.p, missionId, conceptId, masteryGain + (mistakes === 0 ? MASTERY.perfectBonus : 0)) : { p: g.p, learned: null };
+        return { p: ms.p, leveledTo: g.leveledTo, learned: ms.learned, out: { stars, xp: gainXp, gold: gainGold, first, potion, unlockedMission, boss, learned: ms.learned } };
       }),
 
     readLesson: (missionId, lessonId) =>
@@ -317,6 +338,16 @@ export const useGame = create((set, get) => {
         const g = grant(np, { xp: 15, gold: 8 });
         return { p: g.p, leveledTo: g.leveledTo, out: { first: true, xp: 15, gold: 8 } };
       }),
+
+    // maestria vinda de atividades (respostas certas na lição, na primeira leitura, etc.)
+    addMastery: ({ missionId, conceptId, pts }) =>
+      mutate((p) => { const r = addMasteryTo(p, missionId, conceptId, pts); return { p: r.p, learned: r.learned, out: r.learned }; }),
+    equipSpell: (id) =>
+      mutate((p) => (p.skills.equipped.includes(id) || p.skills.equipped.length >= MAX_SLOTS ? null : { p: { ...p, skills: { ...p.skills, equipped: [...p.skills.equipped, id] } } })),
+    unequipSpell: (id) =>
+      mutate((p) => ({ p: { ...p, skills: { ...p.skills, equipped: p.skills.equipped.filter((x) => x !== id) } } })),
+    healHearts: (n) =>
+      mutate((p) => ({ p: { ...p, hearts: Math.min(p.maxHearts, p.hearts + n), heartsAt: p.hearts + n >= p.maxHearts ? Date.now() : p.heartsAt } })),
 
     finishArena: ({ score, correct }) =>
       mutate((p) => {

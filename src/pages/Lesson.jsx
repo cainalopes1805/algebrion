@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useGame } from '../store/useGame';
 import { getMission } from '../data/content';
+import { MASTERY } from '../data/spells';
 import { MISSION_BG } from '../data/biomes';
 import { realize } from '../data/generators';
 import { makeRng } from '../utils/rng';
@@ -10,6 +11,7 @@ import { useT } from '../i18n';
 import { sounds } from '../utils/audio';
 import { FocusShell } from '../components/Layout';
 import { ExprDisplay } from '../components/MatrixDisplay';
+import { BookOpen } from 'lucide-react';
 import ActivityView from '../components/ActivityView';
 import Character from '../components/Character';
 import Rich from '../components/Rich';
@@ -31,6 +33,7 @@ function Runner({ mission, lesson }) {
   const nav = useNavigate();
   const readLesson = useGame((s) => s.readLesson);
   const recordAnswer = useGame((s) => s.recordAnswer);
+  const addMastery = useGame((s) => s.addMastery);
   const [i, setI] = useState(0);
   const [reward, setReward] = useState(null);
   const [hits, setHits] = useState(0);
@@ -40,8 +43,8 @@ function Runner({ mission, lesson }) {
     const out = [];
     lesson.pages.forEach((pg, k) => {
       out.push({ kind: 'page', pg, k });
-      const gen = lesson.tries?.[k];
-      if (gen) out.push({ kind: 'try', activity: realize(gen, rng), k });
+      // depois de cada página, algumas atividades de fixação sobre o que acabou de ser explicado
+      (lesson.tries?.[k] || []).forEach((spec) => out.push({ kind: 'try', activity: realize(spec, rng), k }));
     });
     return out;
   }, [lesson]);
@@ -50,11 +53,15 @@ function Runner({ mission, lesson }) {
   const last = i === steps.length - 1;
   const tryCount = steps.filter((s) => s.kind === 'try').length;
 
+  // a lição de um passo termina no treino do mesmo passo (a fase de mesmo número)
+  const practiceRoute = `/mission/${mission.id}/level/${lesson.id}`;
   const advance = () => {
     sounds.page();
     if (last) {
       const r = readLesson(mission.id, lesson.id);
-      if (r?.first) { sounds.victory(); setReward(r); } else nav('/trail');
+      // a lição e as respostas certas nas atividades de fixação rendem maestria do feitiço deste conceito
+      addMastery({ missionId: mission.id, conceptId: lesson.id, pts: hits * MASTERY.lessonTry + (r?.first ? MASTERY.lesson : 0) });
+      if (r?.first) { sounds.victory(); setReward(r); } else nav(practiceRoute);
       return;
     }
     setI(i + 1);
@@ -70,7 +77,7 @@ function Runner({ mission, lesson }) {
         <div className="flex items-center gap-3 mb-5">
           <button onClick={() => nav('/trail')} className="w-9 h-9 rounded-xl border-2 border-line bg-surface text-dim hover:text-ink" aria-label={t('exit')}>✕</button>
           <ProgressBar pct={i / steps.length} className="flex-1" height="h-3.5" />
-          <span className="text-xs font-black text-dim tabular-nums">{lesson.icon}</span>
+          <Link to={`/tome/${mission.id}/${lesson.id}`} onClick={() => sounds.click()} className="shrink-0 px-3 h-9 rounded-lg border border-line bg-surface text-accent2 hover:border-accent inline-flex items-center gap-1.5 text-[11px] font-extrabold uppercase tracking-[0.12em]" title={t('tome_open')}><BookOpen size={15} strokeWidth={1.9} /><span className="hidden sm:inline">{t('tome_open')}</span></Link>
         </div>
 
         <AnimatePresence mode="wait">
@@ -89,7 +96,7 @@ function Runner({ mission, lesson }) {
                 {step.pg.formula && <div className="mt-4 text-center font-display text-lg sm:text-2xl font-black text-accent2 py-3 rounded-2xl border-2 border-accent/50 bg-accent/10">{step.pg.formula}</div>}
               </div>
               <div className="flex justify-between gap-3 mt-6">
-                <Button variant="ghost" disabled={i === 0} onClick={() => { sounds.page(); setI(Math.max(0, i - 1 - (steps[i - 1]?.kind === 'try' ? 1 : 0))); }}>←</Button>
+                <Button variant="ghost" disabled={i === 0} onClick={() => { sounds.page(); let j = i - 1; while (j > 0 && steps[j].kind === 'try') j -= 1; setI(Math.max(0, j)); }}>←</Button>
                 <Button className="flex-1 max-w-xs" onClick={advance}>{steps[i + 1]?.kind === 'try' ? t('practice_now') : last ? t('finish_lesson') : t('next')} →</Button>
               </div>
             </motion.div>
@@ -110,7 +117,10 @@ function Runner({ mission, lesson }) {
             <h3 className="font-display text-2xl font-black text-accent2 mt-2">{t('lesson_done')}</h3>
             {tryCount > 0 && <p className="text-dim text-sm mt-1">{hits}/{tryCount} {t('correct').toLowerCase()}</p>}
             <p className="my-3 text-lg font-black">+{reward.xp} XP · +{reward.gold} 💰</p>
-            <Button className="w-full" onClick={() => nav('/trail')}>{t('continue')}</Button>
+            <div className="flex flex-col gap-2">
+              <Button className="w-full" onClick={() => nav(practiceRoute)}>{t('practice_this')} →</Button>
+              <Button variant="ghost" className="w-full" onClick={() => nav('/trail')}>{t('back_to_map')}</Button>
+            </div>
           </motion.div>
         </div>
       )}
