@@ -5,6 +5,16 @@ import { levelFromXp } from '../data/characters';
 import { ACHIEVEMENTS, ACH_BY_ID, CONSUMABLES, COSMETIC_BY_ID, questsForDay } from '../data/economy';
 import { MISSIONS } from '../data/content';
 import { MASTERY, MASTERY_GOAL, MAX_SLOTS, SPELL_BY_ID } from '../data/spells';
+import {
+  ATTRIBUTE_IDS,
+  ATTRIBUTES,
+  calculateMaxHearts,
+  getAvailableAttributePoints,
+  getAvailableTalentPoints,
+  RESPEC_GOLD_COST,
+  TALENT_BY_ID,
+  CLASS_TALENTS,
+} from '../data/classes';
 
 // Versão do currículo: ao mudar a estrutura de fases/lições, a trilha (e a história) recomeça; ouro, XP, itens e cosméticos ficam.
 export const CURRICULUM_VERSION = 2;
@@ -56,9 +66,11 @@ const emptyProfile = (name = 'Aprendiz', hero = 'mage') => ({
   items: { shield: 1, hint: 2, xpPotion: 0 },
   quests: { day: null, list: [] },
   flags: {},
-  story: { seen: {}, flags: {}, shards: [] },
+  story: { seen: {}, flags: {}, shards: [], virtues: { courage: 0, wisdom: 0, cunning: 0, compassion: 0 }, bonds: {}, endings: [] },
   curriculum: CURRICULUM_VERSION,
   skills: { mastery: {}, equipped: [] }, // maestria por conceito ("m-c") e feitiços equipados
+  attributes: { intellect: 0, vigor: 0, focus: 0, fortune: 0 },
+  talents: { mage: [], knight: [], ranger: [], alchemist: [], bard: [] },
   stats: { correct: 0, wrong: 0, bestCombo: 0, perfect: 0, arenaBest: 0, arenaRuns: 0, goldEarned: 0, levelsCleared: 0 },
 });
 
@@ -90,9 +102,32 @@ function migrateLegacy() {
 
 // Completa campos novos e, se o currículo mudou, reinicia só a trilha (fases, lições, história e maestria)
 function normalizeProfile(base, p) {
-  const merged = { ...base, ...p, stats: { ...base.stats, ...p.stats }, equipped: { ...base.equipped, ...p.equipped }, items: { ...base.items, ...p.items }, story: { ...base.story, ...p.story }, skills: { ...base.skills, ...p.skills } };
+  const merged = {
+    ...base,
+    ...p,
+    attributes: { ...base.attributes, ...p.attributes },
+    talents: {
+      mage: [],
+      knight: [],
+      ranger: [],
+      alchemist: [],
+      bard: [],
+      ...(p.talents || {}),
+    },
+    stats: { ...base.stats, ...p.stats },
+    equipped: { ...base.equipped, ...p.equipped },
+    items: { ...base.items, ...p.items },
+    story: {
+      ...base.story,
+      ...p.story,
+      virtues: { ...base.story.virtues, ...p.story?.virtues },
+      bonds: { ...base.story.bonds, ...p.story?.bonds },
+    },
+    skills: { ...base.skills, ...p.skills },
+  };
+  merged.maxHearts = calculateMaxHearts(merged);
   if (p.curriculum === CURRICULUM_VERSION) return merged;
-  return { ...merged, curriculum: CURRICULUM_VERSION, unlockedMissions: [1], completedLevels: {}, lessonsRead: {}, story: { seen: {}, flags: {}, shards: [] }, skills: { mastery: {}, equipped: [] } };
+  return { ...merged, curriculum: CURRICULUM_VERSION, unlockedMissions: [1], completedLevels: {}, lessonsRead: {}, story: structuredClone(base.story), skills: { mastery: {}, equipped: [] } };
 }
 
 // Soma pontos de maestria a um conceito; ao chegar à meta, o feitiço é aprendido (e equipado, se houver espaço)
@@ -253,7 +288,88 @@ export const useGame = create((set, get) => {
       persist(get());
     },
     renameProfile: (name) => mutate((p) => ({ p: { ...p, name: name.trim().slice(0, 24) || p.name } })),
-    setHero: (hero) => mutate((p) => (hero === 'mage' || p.owned.includes(`hero_${hero}`) ? { p: { ...p, hero } } : null)),
+    setHero: (hero) =>
+      mutate((p) => {
+        if (hero !== 'mage' && !p.owned.includes(`hero_${hero}`)) return null;
+        let np = { ...p, hero };
+        np.maxHearts = calculateMaxHearts(np);
+        np.hearts = Math.min(np.maxHearts, np.hearts);
+        return { p: np };
+      }),
+
+    /* ───── Classes, Atributos e Talentos ───── */
+    spendAttribute: (attrId) =>
+      mutate((p) => {
+        if (!ATTRIBUTE_IDS.includes(attrId)) return { out: false };
+        const lvl = levelFromXp(p.xp);
+        const avail = getAvailableAttributePoints(lvl, p.attributes);
+        if (avail <= 0) return { out: false };
+        const curVal = p.attributes?.[attrId] || 0;
+        if (curVal >= (ATTRIBUTES[attrId]?.max || 10)) return { out: false };
+
+        const attributes = { ...p.attributes, [attrId]: curVal + 1 };
+        let np = { ...p, attributes };
+        const newMaxHearts = calculateMaxHearts(np);
+        if (newMaxHearts > p.maxHearts) {
+          const diff = newMaxHearts - p.maxHearts;
+          np.maxHearts = newMaxHearts;
+          np.hearts = Math.min(newMaxHearts, np.hearts + diff);
+        } else {
+          np.maxHearts = newMaxHearts;
+        }
+        sounds.select();
+        return { p: np, out: true };
+      }),
+
+    learnTalent: (talentId) =>
+      mutate((p) => {
+        const heroId = p.hero || 'mage';
+        const talent = TALENT_BY_ID[talentId];
+        if (!talent) return { out: false };
+        const heroTalents = CLASS_TALENTS[heroId] || [];
+        if (!heroTalents.some((t) => t.id === talentId)) return { out: false };
+
+        const learned = p.talents?.[heroId] || [];
+        if (learned.includes(talentId)) return { out: false };
+        if (talent.requires && !learned.includes(talent.requires)) return { out: false };
+
+        const lvl = levelFromXp(p.xp);
+        const avail = getAvailableTalentPoints(lvl, p.talents, heroId);
+        if (avail <= 0) return { out: false };
+
+        const talents = { ...p.talents, [heroId]: [...learned, talentId] };
+        let np = { ...p, talents };
+        const newMaxHearts = calculateMaxHearts(np);
+        if (newMaxHearts > p.maxHearts) {
+          const diff = newMaxHearts - p.maxHearts;
+          np.maxHearts = newMaxHearts;
+          np.hearts = Math.min(newMaxHearts, np.hearts + diff);
+        } else {
+          np.maxHearts = newMaxHearts;
+        }
+        sounds.achievement();
+        return { p: np, out: true };
+      }),
+
+    respec: () =>
+      mutate((p) => {
+        if (p.gold < RESPEC_GOLD_COST) return { out: false };
+        const heroId = p.hero || 'mage';
+        const spentAttr = Object.values(p.attributes || {}).reduce((s, v) => s + (v || 0), 0);
+        const spentTal = (p.talents?.[heroId] || []).length;
+        if (spentAttr === 0 && spentTal === 0) return { out: false };
+
+        let np = {
+          ...p,
+          gold: p.gold - RESPEC_GOLD_COST,
+          attributes: { intellect: 0, vigor: 0, focus: 0, fortune: 0 },
+          talents: { ...p.talents, [heroId]: [] },
+        };
+        np.maxHearts = calculateMaxHearts(np);
+        np.hearts = Math.min(np.maxHearts, np.hearts);
+        sounds.buy();
+        return { p: np, out: true };
+      }),
 
     /* ───── Dia / sequência / regeneração ───── */
     touchDay: () =>
@@ -382,6 +498,16 @@ export const useGame = create((set, get) => {
         const g = grant(np, { xp, gold: Math.max(0, gold) });
         return { p: g.p, leveledTo: g.leveledTo };
       }),
+    // consequências das escolhas: virtudes da jornada (v) e vínculo com aliados (b)
+    storyEffects: ({ v = {}, b = {} } = {}) =>
+      mutate((p) => {
+        const virtues = { ...p.story.virtues }, bonds = { ...p.story.bonds };
+        Object.entries(v).forEach(([k, n]) => { virtues[k] = Math.max(0, (virtues[k] || 0) + n); });
+        Object.entries(b).forEach(([k, n]) => { bonds[k] = Math.max(0, (bonds[k] || 0) + n); });
+        return { p: { ...p, story: { ...p.story, virtues, bonds } } };
+      }),
+    recordEnding: (id) =>
+      mutate((p) => (p.story.endings.includes(id) ? null : { p: { ...p, story: { ...p.story, endings: [...p.story.endings, id] } } })),
     addShard: (n) =>
       mutate((p) => (p.story.shards.includes(n) ? null : { p: { ...p, story: { ...p.story, shards: [...p.story.shards, n] } } })),
     finishScene: (id, reward) =>

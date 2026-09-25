@@ -34,7 +34,7 @@ export function buildTrail(p) {
         // primeira vez: começa pela lição; depois, direto no treino (a lição continua na página da missão)
         to: read ? `/mission/${m.id}/level/${lv.id}` : `/mission/${m.id}/lesson/${ls.id}`,
         done: levelDone(lv), stars: stars(lv), available: unlocked && prevDone(lv),
-        before: i === midAt ? [`c${m.id}-mid`] : [],
+        before: [...(i === midAt ? [`c${m.id}-mid`] : []), `s${m.id}-${lv.id}`], // a cena do passo vem antes da lição
       });
     });
     if (nodes.length) nodes[0].before = [...introIds, ...(nodes[0].before || [])];

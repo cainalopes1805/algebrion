@@ -7,13 +7,14 @@ import { useT } from '../i18n';
 import ActivityView from './ActivityView';
 import { cx } from './ui';
 
-export function ManaBar({ mana }) {
+export function ManaBar({ mana, max = MAX_MANA }) {
   const { t } = useT();
+  const total = Math.max(1, max);
   return (
     <div className="flex items-center gap-2" title={t('mana')}>
       <span className="eyebrow !text-[10px] text-mana">{t('mana')}</span>
-      <div className="flex gap-1">
-        {Array.from({ length: MAX_MANA }, (_, i) => (
+      <div className="flex gap-1 flex-wrap">
+        {Array.from({ length: total }, (_, i) => (
           <motion.span key={i} animate={{ scale: i < mana ? 1 : 0.8, opacity: i < mana ? 1 : 0.3 }} className="flex">
             <Droplet size={16} strokeWidth={2} className={cx(i < mana ? 'text-mana fill-mana/50' : 'text-dim')} />
           </motion.span>
@@ -23,12 +24,12 @@ export function ManaBar({ mana }) {
   );
 }
 
-export function SpellBar({ spells, mana, shield, hints, disabled, onCast }) {
+export function SpellBar({ spells, mana, maxMana = MAX_MANA, shield, hints, disabled, onCast, costDiscount = 0 }) {
   const { t, l } = useT();
   return (
     <div className="card-pro !rounded-xl px-3 py-2.5 mb-3">
       <div className="flex items-center justify-between gap-3 flex-wrap">
-        <ManaBar mana={mana} />
+        <ManaBar mana={mana} max={maxMana} />
         <div className="flex items-center gap-3 text-[11px] text-dim font-bold">
           {shield > 0 && <span className="inline-flex items-center gap-1 text-[#8fc0f0]">{t('spell_shield')} ×{shield}</span>}
           {hints > 0 && <span className="inline-flex items-center gap-1 text-accent2">{t('spell_clue')} ×{hints}</span>}
@@ -41,7 +42,8 @@ export function SpellBar({ spells, mana, shield, hints, disabled, onCast }) {
           {spells.map((s) => {
             const Icon = spellIcon(s.icon);
             const c = EFFECT_COLOR[effectKind(s.effect)];
-            const can = !disabled && mana >= s.cost;
+            const effectiveCost = Math.max(1, s.cost - costDiscount);
+            const can = !disabled && mana >= effectiveCost;
             return (
               <button
                 key={s.id}
@@ -53,7 +55,9 @@ export function SpellBar({ spells, mana, shield, hints, disabled, onCast }) {
               >
                 <Icon size={22} strokeWidth={1.8} style={{ color: c }} />
                 <span className="text-[9.5px] font-display font-extrabold leading-tight text-center line-clamp-2 min-h-[2.2em]">{l(s.name)}</span>
-                <span className="absolute -top-1.5 -right-1.5 min-w-5 h-5 px-1 rounded-full bg-mana/90 text-[#06121f] text-[10px] font-black flex items-center justify-center shadow">{s.cost}</span>
+                <span className="absolute -top-1.5 -right-1.5 min-w-5 h-5 px-1 rounded-full bg-mana/90 text-[#06121f] text-[10px] font-black flex items-center justify-center shadow">
+                  {effectiveCost}
+                </span>
                 {s.formula && <span className="absolute -top-1.5 -left-1.5 w-5 h-5 rounded-full bg-accent text-on-accent flex items-center justify-center shadow" title={t('needs_formula')}><Sigma size={11} strokeWidth={2.6} /></span>}
               </button>
             );

@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useGame, useProfile } from '../store/useGame';
 import { ACH_BY_ID } from '../data/economy';
@@ -62,6 +63,8 @@ function SpellToast({ ev, onDone }) {
 function LevelUpModal({ ev, onDone }) {
   const { t, l } = useT();
   const p = useProfile();
+  const hasTalentPoint = ev.level % 3 === 0;
+
   return (
     <motion.div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/80 p-4" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
       <Confetti count={80} />
@@ -70,7 +73,24 @@ function LevelUpModal({ ev, onDone }) {
         <div className="font-fancy text-7xl font-black text-gold-grad my-2">{ev.level}</div>
         <div className="flex justify-center"><Character id={p.hero} size={120} mood="happy" /></div>
         <div className="font-display font-bold mt-2">{l(rankFor(ev.level))}</div>
-        <Button className="mt-5 w-full" onClick={onDone}>{t('continue')}</Button>
+
+        <div className="mt-4 p-3 rounded-xl bg-white/[0.04] border border-line flex flex-col gap-1 text-xs font-display">
+          <div className="text-accent2 font-black">
+            +2 {t('pts_attr_gained')}
+          </div>
+          {hasTalentPoint && (
+            <div className="text-mana font-black">
+              +1 {t('pts_talent_gained')}
+            </div>
+          )}
+        </div>
+
+        <div className="mt-5 flex flex-col gap-2">
+          <Link to="/hero" onClick={onDone} className="btn-cta py-3 font-display font-black text-xs uppercase tracking-wider justify-center">
+            {t('distribute_points')}
+          </Link>
+          <Button variant="ghost" size="sm" onClick={onDone}>{t('continue')}</Button>
+        </div>
       </motion.div>
     </motion.div>
   );

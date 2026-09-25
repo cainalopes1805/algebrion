@@ -11,7 +11,7 @@ export const WORLD_X1 = 660;
 // Índice 0 = vila inicial; 1..7 = capítulos (mesmo id da missão)
 export const LOCS = [
   { id: 0, x: 200, y: 2820, kind: 'village', name: L('Taverna do Javali Dourado', 'Golden Boar Tavern', 'Taberna del Jabalí Dorado', 'Auberge du Sanglier Doré') },
-  { id: 1, x: 88, y: 2500, kind: 'abbey', name: L('Abadia dos Grimórios', 'Abbey of Grimoires', 'Abadía de los Grimorios', 'Abbaye des Grimoires') },
+  { id: 1, x: 88, y: 2410, kind: 'abbey', name: L('Abadia dos Grimórios', 'Abbey of Grimoires', 'Abadía de los Grimorios', 'Abbaye des Grimoires') },
   { id: 2, x: 305, y: 2200, kind: 'lab', name: L('Laboratório do Vale', 'Valley Laboratory', 'Laboratorio del Valle', 'Laboratoire de la Vallée') },
   { id: 3, x: 150, y: 1890, kind: 'fort', name: L('Forte dos Escalares', 'Scalar Stronghold', 'Fuerte de los Escalares', 'Fort des Scalaires') },
   { id: 4, x: 320, y: 1560, kind: 'tower', name: L('Torre dos Espelhos', 'Tower of Mirrors', 'Torre de los Espejos', 'Tour des Miroirs') },
@@ -21,7 +21,7 @@ export const LOCS = [
 ];
 
 // Segmento i liga LOCS[i] → LOCS[i+1] por uma curva sinuosa (o desvio lateral de cada trecho é fixo)
-const SWAY = [[-60, 55], [55, -70], [-70, 60], [60, -55], [-55, 70], [65, -60], [-50, 60]];
+const SWAY = [[-90, 85], [78, -88], [-84, 78], [78, -74], [-78, 88], [84, -78], [-70, 78]];
 export const SEGS = LOCS.slice(0, -1).map((a, i) => {
   const b = LOCS[i + 1];
   const dy = Math.abs(a.y - b.y);
@@ -61,7 +61,7 @@ export const pointAt = (p) => {
 };
 
 // Parada k do trecho: fica na estrada, mas alternando um pouco para cada lado, o que abre mais espaço entre paradas vizinhas
-export const stopAt = (p, k, off = 8) => {
+export const stopAt = (p, k, off = 10) => {
   const [x, y] = pointAt(p), [x2, y2] = pointAt(p + 0.004);
   const ang = Math.atan2(y2 - y, x2 - x) + Math.PI / 2;
   const side = k % 2 ? 1 : -1;
@@ -318,7 +318,7 @@ export function buildLife(decor) {
 
 
 // posição (0..1 dentro do trecho) da k-ésima de K paradas — afastadas dos marcos
-export const wpT = (K, k) => 0.14 + 0.72 * (K <= 1 ? 0.5 : k / (K - 1));
+export const wpT = (K, k) => 0.16 + 0.68 * (K <= 1 ? 0.5 : k / (K - 1));
 
 export const REGION_LABELS = [
   { x: 372, a: 'end', y: 2735, t: L('Floresta Sussurrante', 'Whispering Forest', 'Bosque Susurrante', 'Forêt Murmurante') },

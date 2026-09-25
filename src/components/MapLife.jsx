@@ -2,7 +2,7 @@
 // Fica num SVG separado (acima do terreno estático) para que a animação não repinte o fundo texturizado.
 import { RIVERS, SEGS, LOCS, ZERO } from '../data/mapGeometry';
 import { segPath } from '../data/mapGeometry';
-import { Rotor, Ship, Serpent, SEA_W } from './MapArt';
+import { Rotor } from './MapArt';
 
 const num = (v) => Number(v.toFixed(1));
 
@@ -339,7 +339,6 @@ export function MapSky({ x0, w, decor, life, sky, calm }) {
           </g>
         ))}
         {tents.map((t, i) => <g key={i} transform={`translate(${t.x + 14 * t.s} ${t.y + 2})`}><Glow r={30} delay={-i} /></g>)}
-        <g transform={`translate(${x0 + 25} 2699)`}><Glow r={9} /></g>
         {life.people.filter((p) => vis(p) && p.pose === 'hammer').map((p, i) => <g key={i} transform={`translate(${p.x + 12} ${p.y - 6})`}><Glow r={16} dur={1.4} /></g>)}
         {ZERO.cracks.filter((c) => vis({ x: c[0][0] })).map((c, i) => <path key={i} d={c.map(([x, y], k) => `${k ? 'L' : 'M'}${x} ${y}`).join(' ')} fill="none" stroke="#9a78ff" strokeWidth="1.3" strokeLinecap="round" style={{ mixBlendMode: 'screen', animation: 'flicker 4s ease-in-out infinite', animationDelay: `${-i * 0.6}s` }} />)}
       </g>
@@ -393,22 +392,6 @@ const Duck = ({ d }) => (
     </g>
   </g>
 );
-function Sea({ x0, w }) {
-  const x1 = x0 + w;
-  const coast = Array.from({ length: 60 }, (_, i) => `q9 ${22 + (i % 3) * 3} 0 50`).join(' ');
-  return (
-    <g>
-      {[0, 1].map((side) => (
-        <g key={side} transform={side ? `translate(${x1} 0) scale(-1 1)` : `translate(${x0} 0)`}>
-          <path d={`M${SEA_W} 0 ${coast}`} fill="none" stroke="#f0fbf8" strokeWidth="1.8" strokeDasharray="9 15" strokeLinecap="round" style={{ animation: 'foam 5s ease-in-out infinite', animationDelay: `${side * -2}s` }} />
-          {Array.from({ length: 34 }, (_, i) => (
-            <path key={i} d={`M${6 + ((i * 13) % 26)} ${40 + i * 88 + (i % 3) * 17} q5 -3 10 0`} stroke="#9ed0d2" strokeWidth=".8" fill="none" strokeLinecap="round" className="wave" style={{ animationDelay: `${-((i * 1.7 + side * 3) % 9)}s`, animationDuration: `${7 + (i % 4)}s` }} />
-          ))}
-        </g>
-      ))}
-    </g>
-  );
-}
 
 /* ───────────── Morcegos (à noite) ───────────── */
 const BAT_UP = 'M-7 0 L-4 -3.4 L-2 -1 L0 -2.4 L2 -1 L4 -3.4 L7 0';
@@ -470,16 +453,6 @@ export default function MapLife({ x0, w, decor, life, sky, calm }) {
       <Rivers />
       {lakes.map((d, i) => <Lake key={i} d={d} i={i} />)}
       {life.ducks.filter(vis).map((d, i) => <Duck key={i} d={d} />)}
-      <Sea x0={x0} w={w} />
-      <g transform={`translate(${x0 + 25} 2720)`}>
-        {[0, 1].map((k) => <ellipse key={k} cx="0" cy="9" rx="16" ry="3.6" fill="none" stroke="#dff2f2" strokeWidth=".7" className="ripple" style={{ animationDelay: `${-k * 2.5}s` }} />)}
-        <Ship x={0} y={0} />
-      </g>
-      <g transform={`translate(${x1 - 25} 1640) scale(-.7 .7)`}>
-        {[0, 1].map((k) => <ellipse key={k} cx="0" cy="9" rx="16" ry="3.6" fill="none" stroke="#dff2f2" strokeWidth=".7" className="ripple" style={{ animationDelay: `${-k * 2.5 - 1}s` }} />)}
-        <Ship x={0} y={0} />
-      </g>
-      <g transform={`translate(${x1 - 26} 190) scale(.62)`}><Serpent x={0} y={0} /></g>
 
       {windmills.map((d, i) => (
         <g key={i} transform={`translate(${d.x} ${d.y}) scale(${d.s})`}>

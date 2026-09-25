@@ -19,7 +19,9 @@ import Quests from './pages/Quests';
 import Glories from './pages/Glories';
 import Settings from './pages/Settings';
 import Grimoire from './pages/Grimoire';
+import Journal from './pages/Journal';
 import Tome, { TomeLibrary } from './pages/Tome';
+import Hero from './pages/Hero';
 
 // Aplica configurações globais (tema, acento, movimento, fonte, áudio) e ciclos de tempo
 function GlobalEffects() {
@@ -103,9 +105,11 @@ export default function App() {
           <Route path="arena" element={<ArenaHub />} />
           <Route path="grimoire" element={<Grimoire />} />
           <Route path="library" element={<TomeLibrary />} />
+          <Route path="journal" element={<Journal />} />
           <Route path="ranking" element={<Ranking />} />
           <Route path="shop" element={<Shop />} />
           <Route path="glories" element={<Glories />} />
+          <Route path="hero" element={<Hero />} />
           <Route path="settings" element={<Settings />} />
         </Route>
         <Route path="mission/:missionId/lesson/:lessonId" element={<Lesson />} />

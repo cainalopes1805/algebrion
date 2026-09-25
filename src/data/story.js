@@ -1,6 +1,7 @@
 // A história de Algebrion: cenas com diálogos, escolhas que mudam o rumo e enigmas de matrizes.
 // Tipos de passo: narr · say · choice · if · puzzle · shard · fx
 import { L } from '../i18n/core';
+import { CONCEPT_SCENES, CODA_STEPS } from './story2';
 
 const N = (pt, en, es, fr) => ({ t: 'narr', text: L(pt, en, es, fr) });
 const S = (who, pt, en, es, fr) => ({ t: 'say', who, text: L(pt, en, es, fr) });
@@ -445,6 +446,10 @@ export const SCENES = {
     ],
   },
 };
+
+// cenas de cada passo do currículo + o encerramento com os aliados no epílogo do capítulo 7
+Object.assign(SCENES, CONCEPT_SCENES);
+SCENES['c7-end'].steps.splice(SCENES['c7-end'].steps.length - 1, 0, ...CODA_STEPS);
 
 export const SCENE_TITLES = Object.fromEntries(
   Object.entries(SCENES).map(([id, s]) => [id, s.title]),

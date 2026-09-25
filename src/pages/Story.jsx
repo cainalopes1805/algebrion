@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
+import { Sparkles, Heart, Droplet, Flame } from 'lucide-react';
 import { useGame, useProfile } from '../store/useGame';
 import { SCENES } from '../data/story';
+import { RETROFIT } from '../data/story2';
 import { CHARACTERS, MONSTERS } from '../data/characters';
 import { realize } from '../data/generators';
 import { makeRng } from '../utils/rng';
@@ -16,6 +18,21 @@ import Confetti from '../components/Confetti';
 import { Button, cx } from '../components/ui';
 
 const npcOf = (who) => (who && who !== 'hero' ? who : null);
+
+// efeitos de uma opção: virtudes (v) e vínculos (b); as escolhas antigas recebem os seus por tabela
+const effectsOf = (choiceKey, opt) => ({ v: opt.v || RETROFIT[`${choiceKey}/${opt.id}`]?.v || {}, b: opt.b || RETROFIT[`${choiceKey}/${opt.id}`]?.b || {} });
+const VIRTUES = ['courage', 'wisdom', 'cunning', 'compassion'];
+
+// balãozinho de emoção sobre o personagem que fala
+function Emote({ kind }) {
+  const box = 'absolute -top-2 left-1/2 -translate-x-1/2 z-10 w-9 h-9 rounded-full bg-white/95 border-2 border-black/20 shadow-lg flex items-center justify-center font-display font-black text-lg text-[#2b1d10]';
+  const icon = { joy: <Sparkles size={18} className="text-amber-500" />, love: <Heart size={18} className="text-rose-500 fill-rose-500/40" />, sweat: <Droplet size={17} className="text-sky-500 fill-sky-400/40" />, anger: <Flame size={18} className="text-red-500" /> }[kind];
+  return (
+    <motion.div className={box} initial={{ scale: 0, y: 10, rotate: -12 }} animate={{ scale: [0, 1.25, 1], y: [10, -8, -4], rotate: [-12, 6, 0] }} exit={{ scale: 0, opacity: 0 }} transition={{ duration: 0.45 }}>
+      {icon || (kind === 'alert' ? '!' : '?')}
+    </motion.div>
+  );
+}
 const activeProfile = () => {
   const s = useGame.getState();
   return s.profiles[s.activeId];
@@ -34,7 +51,7 @@ function Player({ id, scene }) {
   const [params] = useSearchParams();
   const then = params.get('then') || '/trail';
   const p = useProfile();
-  const { setStoryFlag, storyReward, addShard, finishScene } = useGame.getState();
+  const { setStoryFlag, storyReward, addShard, finishScene, storyEffects, recordEnding } = useGame.getState();
   // cena já vista antes de abrir: é um replay — as escolhas anteriores ficam como estão e não há recompensas
   const replay = useRef(!!p.story.seen[id]).current;
 
@@ -49,6 +66,10 @@ function Player({ id, scene }) {
   const [puzzle, setPuzzle] = useState(null);
   const [shardStep, setShardStep] = useState(null);
   const [shaking, setShaking] = useState(false);
+  const [moods, setMoods] = useState({});
+  const [emote, setEmote] = useState(null);
+  const [chips, setChips] = useState([]); // consequências da última escolha (+1 Coragem, vínculo…)
+  const [summary, setSummary] = useState(false);
 
   const step = queue[idx];
   const sub = useCallback((txt) => String(txt).replaceAll('{name}', p.name), [p.name]);
@@ -80,6 +101,25 @@ function Player({ id, scene }) {
         setCast((c) => [...c.filter((x) => x !== n), n].slice(-2));
         setSpeaker(n);
       } else setSpeaker('hero');
+      // humor do personagem, balãozinho de emoção e efeito de cena, se a fala pedir
+      setMoods({ [step.who]: step.mood || 'happy' });
+      if (step.em) { setEmote({ who: step.who, kind: step.em, k: Math.random() }); setTimeout(() => setEmote(null), 1900); } else setEmote(null);
+      if (step.fx) {
+        setFx({ kind: step.fx, k: Math.random() });
+        if (step.fx === 'shake' || step.fx === 'thunder') { setShaking(true); setTimeout(() => setShaking(false), 520); }
+        if (step.fx === 'thunder') sounds.hit(); else if (step.fx === 'shake') sounds.wrong(); else if (step.fx === 'sparks') sounds.sword();
+      }
+    } else if (step.t === 'ifv') {
+      const st = activeProfile().story;
+      const val = (step.kind === 'bond' ? st.bonds : st.virtues)?.[step.key] || 0;
+      const chosen = val >= step.min ? step.steps : [];
+      setQueue((q) => [...q.slice(0, idx + 1), ...chosen, ...q.slice(idx + 1)]);
+      setIdx((i) => i + 1);
+    } else if (step.t === 'summary') {
+      const end = activeProfile().story.flags.ending;
+      if (end && !replay) recordEnding(end);
+      sounds.achievement();
+      setSummary(true);
     } else if (step.t === 'narr') setSpeaker(null);
     else if (step.t === 'if') {
       const val = activeProfile().story.flags[step.flag];
@@ -131,9 +171,21 @@ function Player({ id, scene }) {
     return () => window.removeEventListener('keydown', onKey);
   });
 
+  const showChips = (eff) => {
+    const list = [
+      ...Object.entries(eff.v).filter(([, n]) => n).map(([k, n]) => ({ id: `v${k}`, text: `+${n} ${t(`virtue_${k}`)}`, kind: 'virtue' })),
+      ...Object.entries(eff.b).filter(([, n]) => n).map(([k, n]) => ({ id: `b${k}`, text: `${t('bond')}: ${l(CHARACTERS[k].name)} +${n}`, kind: 'bond' })),
+    ];
+    if (!list.length) return;
+    setChips(list);
+    setTimeout(() => setChips([]), 3200);
+  };
   const pick = (opt) => {
     sounds.select();
     if (opt.set) Object.entries(opt.set).forEach(([k, v]) => setStoryFlag(k, v));
+    const eff = effectsOf(step.key, opt);
+    storyEffects(eff);
+    showChips(eff);
     if (opt.reward) storyReward(opt.reward);
     if (opt.reply?.length) splice(opt.reply);
     setIdx(idx + 1);
@@ -155,6 +207,7 @@ function Player({ id, scene }) {
       if (s.t === 'choice' && !replay) {
         const o = s.options[0];
         if (o?.set) Object.entries(o.set).forEach(([k, v]) => setStoryFlag(k, v));
+        if (o) storyEffects(effectsOf(s.key, o));
         for (const r of o?.reply || []) if (r.t === 'shard') addShard(r.n);
       }
     }
@@ -199,14 +252,16 @@ function Player({ id, scene }) {
 
         {/* personagens */}
         <div className="absolute inset-x-0 bottom-0 flex items-end justify-between px-2 sm:px-16 pointer-events-none">
-          <motion.div initial={{ x: -80, opacity: 0 }} animate={{ x: 0, opacity: 1, filter: speaker && speaker !== 'hero' ? 'brightness(.55)' : 'brightness(1)' }} transition={{ type: 'spring', damping: 20 }} className="mb-2">
-            <Character id={heroChar} size={size} mood={puzzle?.result === false ? 'sad' : 'happy'} speaking={speaker === 'hero'} />
+          <motion.div initial={{ x: -80, opacity: 0 }} animate={{ x: 0, opacity: 1, filter: speaker && speaker !== 'hero' ? 'brightness(.55)' : 'brightness(1)' }} transition={{ type: 'spring', damping: 20 }} className="mb-2 relative">
+            <AnimatePresence>{emote?.who === 'hero' && <Emote key={emote.k} kind={emote.kind} />}</AnimatePresence>
+            <Character id={heroChar} size={size} mood={puzzle?.result === false ? 'sad' : moods.hero || 'happy'} speaking={speaker === 'hero'} />
           </motion.div>
           <div className="flex items-end gap-0 mb-2">
             <AnimatePresence>
               {stage.map((n) => (
-                <motion.div key={n} initial={{ x: 100, opacity: 0 }} animate={{ x: 0, opacity: 1, filter: npcAtSpeaker === n ? 'brightness(1)' : 'brightness(.5)', scale: npcAtSpeaker === n ? 1.04 : 0.92 }} exit={{ opacity: 0 }} transition={{ type: 'spring', damping: 18 }} className={stage.length > 1 ? '-ml-8' : ''}>
-                  {n.startsWith('m:') ? <Monster id={n.slice(2)} size={size * 1.15} /> : <Character id={n} size={size} flip speaking={npcAtSpeaker === n} />}
+                <motion.div key={n} initial={{ x: 100, opacity: 0 }} animate={{ x: 0, opacity: 1, filter: npcAtSpeaker === n ? 'brightness(1)' : 'brightness(.5)', scale: npcAtSpeaker === n ? 1.04 : 0.92 }} exit={{ opacity: 0 }} transition={{ type: 'spring', damping: 18 }} className={cx('relative', stage.length > 1 && '-ml-8')}>
+                  <AnimatePresence>{emote?.who === n && <Emote key={emote.k} kind={emote.kind} />}</AnimatePresence>
+                  {n.startsWith('m:') ? <Monster id={n.slice(2)} size={size * 1.15} /> : <Character id={n} size={size} flip mood={moods[n] || 'happy'} speaking={npcAtSpeaker === n} />}
                 </motion.div>
               ))}
             </AnimatePresence>
@@ -263,6 +318,20 @@ function Player({ id, scene }) {
         </div>
       </div>
 
+      {/* consequências da escolha */}
+      <AnimatePresence>
+        {chips.length > 0 && (
+          <motion.div key="chips" initial={{ opacity: 0, y: -12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="absolute top-16 inset-x-0 z-30 flex flex-wrap justify-center gap-2 px-3 pointer-events-none">
+            {chips.map((c) => <span key={c.id} className={cx('px-3 py-1.5 rounded-full text-[12px] font-extrabold tracking-wide border backdrop-blur', c.kind === 'virtue' ? 'bg-amber-400/20 border-amber-300/60 text-amber-100' : 'bg-rose-400/20 border-rose-300/60 text-rose-100')}>{c.text}</span>)}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* resumo da jornada */}
+      <AnimatePresence>
+        {summary && <JourneySummary key="sum" p={p} onDone={() => { setSummary(false); advance(); }} />}
+      </AnimatePresence>
+
       {/* enigma de matrizes */}
       {puzzle && (
         <div className="absolute inset-0 z-30 bg-bg/95 overflow-y-auto px-4 pt-6" onClick={(e) => e.stopPropagation()}>
@@ -310,5 +379,38 @@ function Player({ id, scene }) {
         )}
       </AnimatePresence>
     </div>
+  );
+}
+
+/* ───── Resumo da jornada: virtudes, aliados e final ───── */
+function JourneySummary({ p, onDone }) {
+  const { t, l } = useT();
+  const v = p.story.virtues, bonds = p.story.bonds;
+  const top = VIRTUES.reduce((a, b) => ((v[b] || 0) > (v[a] || 0) ? b : a), 'courage');
+  const allies = Object.entries(bonds).filter(([, n]) => n >= 1).sort((a, b) => b[1] - a[1]);
+  const end = p.story.flags.ending;
+  return (
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 z-50 bg-black/90 overflow-y-auto flex items-center justify-center px-4 py-6" onClick={(e) => e.stopPropagation()}>
+      <Confetti count={50} coins={false} />
+      <motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} className="card-pro w-full max-w-md p-6 text-center !border-accent/60">
+        <div className="eyebrow text-accent">{t('journey_summary')}</div>
+        <div className="font-fancy text-2xl font-black text-accent2 mt-2 leading-tight">{end === 'justice' ? t('title_justice') : t('title_mercy')} · {t(`virtue_${top}`)}</div>
+        <div className="mt-5 space-y-2.5 text-left">
+          {VIRTUES.map((k) => (
+            <div key={k}>
+              <div className="flex justify-between text-[11px] font-extrabold uppercase tracking-[0.12em] text-dim"><span>{t(`virtue_${k}`)}</span><span className="tabular-nums text-accent2">{v[k] || 0}</span></div>
+              <div className="h-1.5 rounded-full bg-black/40 mt-1 overflow-hidden"><motion.div className="h-full rounded-full bg-gradient-to-r from-accent to-accent2" initial={{ width: 0 }} animate={{ width: `${Math.min(100, (v[k] || 0) * 12)}%` }} transition={{ duration: 0.9 }} /></div>
+            </div>
+          ))}
+        </div>
+        {allies.length > 0 && (
+          <div className="mt-5">
+            <div className="eyebrow !text-[10px] text-dim mb-2">{t('allies')}</div>
+            <div className="flex flex-wrap justify-center gap-3">{allies.map(([k, n]) => <div key={k} className="flex flex-col items-center"><div className="w-14 h-14 rounded-full overflow-hidden bg-black/30 border border-line"><div className="-mt-1 ml-[-4px]"><Character id={k} size={64} animate={false} /></div></div><div className="text-[10px] font-bold mt-1">{l(CHARACTERS[k].name).split(',')[0]}</div><div className="flex gap-0.5 text-rose-400">{Array.from({ length: Math.min(5, n) }, (_, i) => <Heart key={i} size={9} className="fill-current" />)}</div></div>)}</div>
+          </div>
+        )}
+        <Button className="w-full mt-6" onClick={onDone}>{t('continue')}</Button>
+      </motion.div>
+    </motion.div>
   );
 }

@@ -4,7 +4,8 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { useGame, useProfile } from '../store/useGame';
 import { buildLevelSession, getLevel, getMission } from '../data/content';
 import { nextAfterLevel } from '../data/trail';
-import { SPELL_BY_ID, MASTERY, MASTERY_GOAL, MAX_MANA, isLearned, masteryOf } from '../data/spells';
+import { SPELL_BY_ID, MASTERY, MASTERY_GOAL, maxManaFor, isLearned, masteryOf } from '../data/spells';
+import { calculateHeroBonuses } from '../data/classes';
 import { realize } from '../data/generators';
 import { makeRng } from '../utils/rng';
 import { SpellBar, SpellFx, FormulaModal } from '../components/SpellUI';
@@ -67,11 +68,30 @@ function Runner({ mission, level, onRestart }) {
   // ── feitiços (chefes e provas) ──
   const battle = !!(level.boss || level.exam);
   const spells = p.skills.equipped.map((id) => SPELL_BY_ID[id]).filter((sp) => sp && isLearned(p, sp));
-  const [mana, setMana] = useState(2);
-  const [shield, setShield] = useState(0);
-  const shieldRef = useRef(0);
-  const [bonusHints, setBonusHints] = useState(0);
-  const bonusRef = useRef(0);
+  // bênçãos das virtudes da jornada, atributos, talentos e vínculo com o mentor deste capítulo
+  const V = p.story.virtues, B = p.story.bonds;
+  const heroBonuses = calculateHeroBonuses(p);
+
+  const perk = {
+    mana: Math.min(2, Math.floor((V.courage || 0) / 2)) + (heroBonuses.startMana || 0),
+    hints: Math.min(2, Math.floor((V.wisdom || 0) / 2)) + (heroBonuses.hints || 0),
+    gold: Math.min(20, Math.floor((V.cunning || 0) / 2) * 10) + (heroBonuses.goldBonus || 0),
+    heal: Math.min(2, Math.floor((V.compassion || 0) / 2)) + (heroBonuses.winHeal || 0),
+    ally: (B[mission.mentor] || 0) >= 3 ? 1 : 0,
+    startShield: (battle ? heroBonuses.startShield || 0 : 0) + (level.boss ? heroBonuses.bossShield || 0 : 0),
+    xpBonus: (p.hero === 'bard' ? 15 : 0) + (heroBonuses.xpBonus || 0),
+    skipBonus: (p.hero === 'ranger' ? 1 : 0) + (heroBonuses.skipBonus || 0),
+    healBonus: (p.hero === 'alchemist' ? 1 : 0) + (heroBonuses.healBonus || 0),
+    comboManaBonus: (p.hero === 'bard' ? 1 : 0) + (heroBonuses.comboManaBonus || 0),
+  };
+
+  const maxMana = maxManaFor(p);
+  const [mana, setMana] = useState(Math.min(maxMana, 2 + perk.mana + perk.ally));
+  const [shield, setShield] = useState(perk.startShield);
+  const shieldRef = useRef(perk.startShield);
+  const [bonusHints, setBonusHints] = useState(perk.hints);
+  const bonusRef = useRef(perk.hints);
+  const [mageDiscountActive, setMageDiscountActive] = useState(p.hero === 'mage');
   const [answered, setAnswered] = useState(false);
   const [casting, setCasting] = useState(null);
   const [spellFx, setSpellFx] = useState(null);
@@ -82,7 +102,10 @@ function Runner({ mission, level, onRestart }) {
   useEffect(() => { setAnswered(false); }, [current?.uid]);
 
   const complete = () => {
-    const res = completeLevel({ missionId: mission.id, levelId: level.id, mistakes, xp: level.xpReward, gold: level.goldReward, masteryGain: masteryRef.current, conceptId: level.concept ? level.id : null });
+    const gainXp = Math.round(level.xpReward * (1 + perk.xpBonus / 100));
+    const gainGold = Math.round(level.goldReward * (1 + perk.gold / 100));
+    const res = completeLevel({ missionId: mission.id, levelId: level.id, mistakes, xp: gainXp, gold: gainGold, masteryGain: masteryRef.current, conceptId: level.concept ? level.id : null });
+    if (perk.heal) healHearts(perk.heal); // compaixão e talentos: a vitória cura
     setResult(res);
     sounds.victory();
     setEvent({ kind: 'win', n: Math.random() });
@@ -101,7 +124,7 @@ function Runner({ mission, level, onRestart }) {
         setDone((d) => d + 1);
         setEvent({ kind: 'hit', dmg: 1, n: Math.random() });
         if (level.boss) sounds.sword();
-        if (battle) setMana((m) => Math.min(MAX_MANA, m + (nc >= 3 ? 2 : 1)));
+        if (battle) setMana((m) => Math.min(maxMana, m + (nc >= 3 ? 2 + perk.comboManaBonus : 1)));
         if (level.concept) masteryRef.current += current.retry ? MASTERY.retryCorrect : MASTERY.correct;
       } else {
         sounds.wrong();
@@ -124,7 +147,7 @@ function Runner({ mission, level, onRestart }) {
         if (!current.retry) setQueue((q) => [...q, { a: current.a, uid: `${current.uid}-r`, retry: true }]);
       }
     },
-    [combo, current, level.boss, level.concept, battle, loseHeart, recordAnswer],
+    [combo, current, level.boss, level.concept, battle, loseHeart, recordAnswer, maxMana, perk.comboManaBonus],
   );
 
   // ── lançar feitiços ──
@@ -134,19 +157,23 @@ function Runner({ mission, level, onRestart }) {
     setTimeout(() => setSpellFx(null), 1650);
     sounds.achievement();
     if (e.skip) {
-      const step = Math.min(e.skip, queue.length - idx);
+      const step = Math.min(e.skip + perk.skipBonus, queue.length - idx);
       setDone((d) => d + step);
       setEvent({ kind: 'hit', dmg: step, n: Math.random() });
       if (idx + step >= queue.length) setTimeout(complete, 900);
       else setIdx(idx + step);
     }
     if (e.shield) { shieldRef.current += e.shield; setShield(shieldRef.current); }
-    if (e.heal) healHearts(e.heal);
+    if (e.heal) healHearts(e.heal + perk.healBonus);
     if (e.reveal) { bonusRef.current += e.reveal; setBonusHints(bonusRef.current); }
   };
   const castSpell = (spell) => {
-    if (answered || mana < spell.cost) return;
-    setMana((m) => m - spell.cost);
+    const isMageDiscount = p.hero === 'mage' && mageDiscountActive;
+    const costDiscount = isMageDiscount ? 1 : 0;
+    const effectiveCost = Math.max(1, spell.cost - costDiscount);
+    if (answered || mana < effectiveCost) return;
+    setMana((m) => m - effectiveCost);
+    if (isMageDiscount) setMageDiscountActive(false);
     if (!spell.formula) { applySpell(spell); return; }
     setCasting({ spell, activity: realize(spell.formula, makeRng(Date.now())), result: null, k: Math.random() });
   };
@@ -204,7 +231,21 @@ function Runner({ mission, level, onRestart }) {
 
           {phase === 'play' && current && (
             <motion.div key="play" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-              {battle && <SpellBar spells={spells} mana={mana} shield={shield} hints={bonusHints} disabled={answered} onCast={castSpell} />}
+              {(perk.mana > 0 || perk.hints > 0 || perk.gold > 0 || perk.heal > 0 || perk.ally > 0 || perk.startShield > 0 || p.hero === 'mage' || perk.skipBonus > 0 || perk.healBonus > 0 || perk.comboManaBonus > 0) && (
+                <div className="mb-3 flex flex-wrap gap-1.5 text-[10.5px] font-extrabold uppercase tracking-[0.1em]">
+                  {perk.mana > 0 && <span className="px-2 py-1 rounded-full border border-amber-300/40 bg-amber-300/10 text-amber-100">{t('perk_courage', { n: perk.mana })}</span>}
+                  {perk.hints > 0 && <span className="px-2 py-1 rounded-full border border-amber-300/40 bg-amber-300/10 text-amber-100">{t('perk_wisdom', { n: perk.hints })}</span>}
+                  {perk.gold > 0 && <span className="px-2 py-1 rounded-full border border-amber-300/40 bg-amber-300/10 text-amber-100">+{perk.gold}% {t('gold')}</span>}
+                  {perk.heal > 0 && <span className="px-2 py-1 rounded-full border border-amber-300/40 bg-amber-300/10 text-amber-100">{t('perk_compassion', { n: perk.heal })}</span>}
+                  {perk.ally > 0 && battle && <span className="px-2 py-1 rounded-full border border-rose-300/40 bg-rose-300/10 text-rose-100">{t('bond')}: +1 {t('mana')}</span>}
+                  {perk.startShield > 0 && battle && <span className="px-2 py-1 rounded-full border border-sky-300/40 bg-sky-300/10 text-sky-100">{t('spell_shield')}: +{perk.startShield}</span>}
+                  {p.hero === 'mage' && mageDiscountActive && battle && <span className="px-2 py-1 rounded-full border border-mana/40 bg-mana/10 text-mana">{t('passive_mage_badge')}</span>}
+                  {perk.skipBonus > 0 && battle && <span className="px-2 py-1 rounded-full border border-emerald-300/40 bg-emerald-300/10 text-emerald-100">{t('passive_ranger_badge')}</span>}
+                  {perk.healBonus > 0 && battle && <span className="px-2 py-1 rounded-full border border-purple-300/40 bg-purple-300/10 text-purple-100">{t('passive_alchemist_badge')}</span>}
+                  {p.hero === 'bard' && battle && <span className="px-2 py-1 rounded-full border border-orange-300/40 bg-orange-300/10 text-orange-100">{t('passive_bard_badge')}</span>}
+                </div>
+              )}
+              {battle && <SpellBar spells={spells} mana={mana} maxMana={maxMana} shield={shield} hints={bonusHints} disabled={answered} onCast={castSpell} costDiscount={p.hero === 'mage' && mageDiscountActive ? 1 : 0} />}
               {level.boss && <div className="mb-4"><BattleStage hero={p.hero} monster={monster} hpPct={hpPct} event={event} combo={combo} heartsLost={lastLost} /></div>}
               {!level.boss && combo >= 3 && (
                 <motion.div key={combo} initial={{ scale: 0.6, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="text-center font-display font-black text-accent mb-2 anim-flame">🔥 {t('combo')} x{combo}</motion.div>

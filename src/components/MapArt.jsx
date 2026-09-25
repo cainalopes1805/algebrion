@@ -2,7 +2,6 @@
 import { MAP_H, ZERO } from '../data/mapGeometry';
 
 export const INK = '#8f7d58';
-export const SEA_W = 46; // largura do mar em cada lado
 
 /* ───────────── Terreno ───────────── */
 export function Decor({ d }) {
@@ -165,16 +164,6 @@ export function MapFrame({ x0 = 0, w = 400 }) {
       <rect x={x0 + 12} y="12" width={w - 24} height={MAP_H - 24} fill="none" stroke={INK} strokeWidth=".8" opacity=".7" />
       {[[x0 + 12, 12], [x1 - 12, 12], [x0 + 12, MAP_H - 12], [x1 - 12, MAP_H - 12]].map(([x, y], i) => (
         <g key={i} transform={`translate(${x} ${y})`}><circle r="6" fill="none" stroke={INK} strokeWidth="1.2" /><circle r="2" fill={INK} /></g>
-      ))}
-      {/* mar nas bordas: águas rasas junto à costa, mais fundas para fora */}
-      <defs>
-        <linearGradient id="seaG" x1="1" y1="0" x2="0" y2="0"><stop offset="0" stopColor="#3a7a80" /><stop offset=".35" stopColor="#1f4d5a" /><stop offset="1" stopColor="#0d2530" /></linearGradient>
-      </defs>
-      {[0, 1].map((side) => (
-        <g key={side} transform={side ? `translate(${x1} 0) scale(-1 1)` : `translate(${x0} 0)`}>
-          <path d={`M0 0 H${SEA_W} ${Array.from({ length: 60 }, (_, i) => `q9 ${22 + (i % 3) * 3} 0 50`).join(' ')} H0z`} fill="url(#seaG)" />
-          <path d={`M${SEA_W} 0 ${Array.from({ length: 60 }, (_, i) => `q9 ${22 + (i % 3) * 3} 0 50`).join(' ')}`} fill="none" stroke="#8fb8b0" strokeWidth="1.2" opacity=".35" />
-        </g>
       ))}
     </g>
   );

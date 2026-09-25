@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowRight, ChevronRight, Map, ScrollText, Swords, Trophy, ShoppingBag, Medal, Coins, Gem, Lock, Crown, Flag, Sparkles } from 'lucide-react';
+import { ArrowRight, ChevronRight, BookText, Map, ScrollText, Swords, Trophy, ShoppingBag, Medal, Coins, Gem, Lock, Crown, Flag, Sparkles, Shield } from 'lucide-react';
 import { ROMAN, MISSION_ICON, KIND_ICON } from '../components/gameIcons';
 import { useGame, useProfile } from '../store/useGame';
 import { buildTrail } from '../data/trail';
@@ -9,6 +9,7 @@ import { biomeColor } from '../data/biomes';
 import { ACHIEVEMENTS, getRivals } from '../data/economy';
 import { MISSIONS } from '../data/content';
 import { MONSTERS, levelProgress, rankFor } from '../data/characters';
+import { getAvailableAttributePoints, getAvailableTalentPoints, HERO_CLASSES } from '../data/classes';
 import { useT } from '../i18n';
 import { sounds } from '../utils/audio';
 import Character from '../components/Character';
@@ -51,6 +52,11 @@ export default function Home() {
   const totalNodes = trail.units.reduce((s, u) => s + u.nodes.length, 0);
   const doneNodes = trail.units.reduce((s, u) => s + u.done, 0);
 
+  const unspentAttr = getAvailableAttributePoints(prog.level, p.attributes);
+  const unspentTalent = getAvailableTalentPoints(prog.level, p.talents, p.hero);
+  const totalUnspent = unspentAttr + unspentTalent;
+  const heroRole = HERO_CLASSES[p.hero]?.role || HERO_CLASSES.mage.role;
+
   const color = cur ? biomeColor(cur.mission.biome) : '#a4854a';
   const heroTitle = cur ? (cur.kind === 'boss' ? l(MONSTERS[cur.mission.boss].name) : cur.kind === 'story' ? `${t('story')}: ${l(cur.mission.title)}` : l(cur.title)) : t('all_done');
   const MissionIcon = cur ? MISSION_ICON[cur.mission.id] || Sparkles : Crown;
@@ -62,7 +68,9 @@ export default function Home() {
     <div className="space-y-7 max-w-3xl mx-auto">
       {/* Saudação */}
       <div className="flex items-center gap-3.5">
-        <div className="rounded-2xl p-0.5 bg-gradient-to-br from-accent2 to-accent/30"><div className="rounded-[14px] overflow-hidden bg-bg"><HeroPortrait hero={p.hero} equipped={p.equipped} size={56} /></div></div>
+        <Link to="/hero" onClick={() => sounds.click()} className="rounded-2xl p-0.5 bg-gradient-to-br from-accent2 to-accent/30 hover:scale-105 transition-transform" title={t('nav_hero')}>
+          <div className="rounded-[14px] overflow-hidden bg-bg"><HeroPortrait hero={p.hero} equipped={p.equipped} size={56} /></div>
+        </Link>
         <div className="min-w-0 flex-1">
           <div className="eyebrow text-dim">{t('welcome_back')}</div>
           <div className="font-display font-black text-[22px] leading-tight truncate">{p.name}</div>
@@ -112,14 +120,25 @@ export default function Home() {
         </div>
       </Link>
 
+      {/* Diário da jornada */}
+      <Link to="/journal" onClick={() => sounds.click()} className="card-pro flex items-center gap-4 p-4 hover:border-accent/50 transition-colors">
+        <div className="w-11 h-11 shrink-0 rounded-xl bg-accent/10 border border-accent/40 flex items-center justify-center text-accent2"><BookText size={21} strokeWidth={1.8} /></div>
+        <div className="flex-1 min-w-0">
+          <div className="font-display font-extrabold text-sm">{t('nav_journal')}</div>
+          <div className="text-xs text-dim mt-0.5">{['courage', 'wisdom', 'cunning', 'compassion'].map((k) => `${t(`virtue_${k}`)} ${p.story.virtues[k] || 0}`).join(' · ')}</div>
+        </div>
+        <ChevronRight size={16} className="text-dim" />
+      </Link>
+
       {/* Cartões de acesso */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-        <QuickCard to="/trail" Icon={Map} title={t('nav_trail')} sub={t('trail_sub', { n: MISSIONS.length })} color="#4b7a63" delay={0.05} />
-        <QuickCard to="/quests" Icon={ScrollText} title={t('daily_quests')} sub={`${questsDone}/${p.quests.list.length || 3} ${t('done')}`} badge={claimable || null} color="#a4854a" delay={0.1} />
-        <QuickCard to="/arena" Icon={Swords} title={t('nav_arena')} sub={`${t('best_score')}: ${p.stats.arenaBest}`} color="#9a4a48" delay={0.15} />
-        <QuickCard to="/ranking" Icon={Trophy} title={t('nav_ranking')} sub={`#${rankPos} · ${t('rank_weekly')}`} color="#7d6aa6" delay={0.2} />
-        <QuickCard to="/shop" Icon={ShoppingBag} title={t('nav_shop')} sub={<><Coins size={13} className="text-accent2" /><span className="tabular-nums">{p.gold}</span></>} color="#a8623a" delay={0.25} />
-        <QuickCard to="/glories" Icon={Medal} title={t('nav_glories')} sub={`${achCount}/${ACHIEVEMENTS.length}`} color="#467f7e" delay={0.3} />
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <QuickCard to="/hero" Icon={Shield} title={t('nav_hero')} sub={totalUnspent > 0 ? `${totalUnspent} ${t('points_available')}` : l(heroRole)} badge={totalUnspent || null} color="#c79a46" delay={0.03} />
+        <QuickCard to="/trail" Icon={Map} title={t('nav_trail')} sub={t('trail_sub', { n: MISSIONS.length })} color="#4b7a63" delay={0.06} />
+        <QuickCard to="/quests" Icon={ScrollText} title={t('daily_quests')} sub={`${questsDone}/${p.quests.list.length || 3} ${t('done')}`} badge={claimable || null} color="#a4854a" delay={0.09} />
+        <QuickCard to="/arena" Icon={Swords} title={t('nav_arena')} sub={`${t('best_score')}: ${p.stats.arenaBest}`} color="#9a4a48" delay={0.12} />
+        <QuickCard to="/ranking" Icon={Trophy} title={t('nav_ranking')} sub={`#${rankPos} · ${t('rank_weekly')}`} color="#7d6aa6" delay={0.15} />
+        <QuickCard to="/shop" Icon={ShoppingBag} title={t('nav_shop')} sub={<><Coins size={13} className="text-accent2" /><span className="tabular-nums">{p.gold}</span></>} color="#a8623a" delay={0.18} />
+        <QuickCard to="/glories" Icon={Medal} title={t('nav_glories')} sub={`${achCount}/${ACHIEVEMENTS.length}`} color="#467f7e" delay={0.21} />
       </div>
 
       {/* Unidades */}

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { NavLink, Outlet, useLocation, Link } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
-import { House, Map, ScrollText, Swords, Trophy, ShoppingBag, Medal, BedDouble, BookMarked, Heart, Coins, Flame, Hourglass } from 'lucide-react';
+import { House, Map, ScrollText, Swords, Trophy, ShoppingBag, Medal, BedDouble, BookMarked, BookText, Heart, Coins, Flame, Hourglass, Shield } from 'lucide-react';
 import { useGame, useProfile, HEART_REGEN_MS } from '../store/useGame';
 import { levelProgress, rankFor } from '../data/characters';
 import { useT } from '../i18n';
@@ -13,7 +13,9 @@ import { ProgressBar, cx } from './ui';
 const NAV = [
   { to: '/', Icon: House, key: 'nav_home', end: true, mobile: true },
   { to: '/trail', Icon: Map, key: 'nav_trail', mobile: true },
+  { to: '/hero', Icon: Shield, key: 'nav_hero', mobile: true },
   { to: '/quests', Icon: ScrollText, key: 'nav_quests' },
+  { to: '/journal', Icon: BookText, key: 'nav_journal' },
   { to: '/arena', Icon: Swords, key: 'nav_arena', mobile: true },
   { to: '/grimoire', Icon: BookMarked, key: 'nav_grimoire', mobile: true },
   { to: '/ranking', Icon: Trophy, key: 'nav_ranking', mobile: true },
@@ -88,7 +90,7 @@ export default function Layout() {
           <div className="font-fancy text-[26px] font-black text-accent2 leading-none tracking-wide">Algebrion</div>
           <div className="flex items-center gap-2 mt-2 text-dim"><span className="h-px flex-1 bg-line" /><span className="text-[9px] tracking-[0.28em] uppercase font-extrabold">{t('tagline')}</span><span className="h-px flex-1 bg-line" /></div>
         </Link>
-        <Link to="/settings" className="card-pro p-3 flex items-center gap-3 hover:border-accent/60 transition-colors">
+        <Link to="/hero" onClick={() => sounds.click()} className="card-pro p-3 flex items-center gap-3 hover:border-accent/60 transition-colors">
           <HeroPortrait hero={p.hero} equipped={p.equipped} size={56} />
           <div className="min-w-0">
             <div className="font-display font-black truncate">{p.name}</div>
@@ -118,7 +120,7 @@ export default function Layout() {
       <header className="tex sticky top-0 z-30 border-b border-line bg-bg/95 backdrop-blur">
         <div className="max-w-3xl mx-auto px-4 py-2.5 flex items-center justify-between gap-3">
           <Hud />
-          <Link to="/settings" className="lg:hidden">
+          <Link to="/hero" onClick={() => sounds.click()} className="lg:hidden" aria-label={t('nav_hero')}>
             <HeroPortrait hero={p.hero} equipped={p.equipped} size={40} />
           </Link>
         </div>

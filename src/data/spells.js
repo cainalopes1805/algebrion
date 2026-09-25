@@ -1,11 +1,14 @@
 // Feitiços de batalha: cada conceito dominado ensina um. Os melhores exigem uma "fórmula mágica"
 // (um exercício do próprio conceito) para serem lançados.
 import { L } from '../i18n/core';
+import { calculateMaxMana } from './classes';
 
 // Pontos de maestria necessários para aprender o feitiço (uma execução perfeita rende ~105: é preciso treinar de novo)
 export const MASTERY_GOAL = 150;
 export const MAX_SLOTS = 4;
+export const BASE_MANA = 6;
 export const MAX_MANA = 6;
+export const maxManaFor = (profile) => (profile ? calculateMaxMana(profile) : MAX_MANA);
 
 // Ganhos de maestria
 export const MASTERY = { lesson: 15, lessonTry: 2, correct: 6, retryCorrect: 2, perfectBonus: 10 };
