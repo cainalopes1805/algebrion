@@ -4,7 +4,7 @@ import { AnimatePresence, animate, motion } from 'framer-motion';
 import { useGame, useProfile } from '../store/useGame';
 import { buildTrail } from '../data/trail';
 import { biomeColor } from '../data/biomes';
-import { LOCS, SEGS, MAP_H, WORLD_X0, WORLD_X1, segPath, pointAt, buildDecor, buildLife, RIVERS, BRIDGES, REGION_LABELS, wpT } from '../data/mapGeometry';
+import { LOCS, SEGS, MAP_H, WORLD_X0, WORLD_X1, segPath, pointAt, stopAt, buildDecor, buildLife, RIVERS, BRIDGES, REGION_LABELS, wpT } from '../data/mapGeometry';
 import { MONSTERS } from '../data/characters';
 import { useT } from '../i18n';
 import { sounds } from '../utils/audio';
@@ -21,14 +21,12 @@ import { spellIcon, EFFECT_COLOR } from '../components/spellIcons';
 const DECOR = buildDecor();
 const LIFE = buildLife(DECOR);
 
-// posição (p) de um passo no percurso: 0 = vila; unidade m ocupa o trecho [m-1, m]
-function stepP(unit, node) {
+// posição (x, y) de um passo no percurso: unidade m ocupa o trecho [m-1, m]
+function stepPos(unit, node) {
   const m = unit.mission.id;
   const walk = unit.nodes.filter((n) => n.kind !== 'boss' && n.kind !== 'story');
-  if (node.kind === 'story') return m;
-  if (node.kind === 'boss') return m - 1 + 0.93;
   const k = walk.findIndex((n) => n.key === node.key);
-  return m - 1 + wpT(walk.length, k);
+  return stopAt(m - 1 + wpT(walk.length, k), k);
 }
 
 export default function Trail() {
@@ -215,7 +213,7 @@ export default function Trail() {
             const walk = unit.nodes.filter((n) => n.kind !== 'boss' && n.kind !== 'story');
             const color = biomeColor(unit.mission.biome);
             return walk.map((node, k) => {
-              const [x, y] = pointAt(unit.mission.id - 1 + wpT(walk.length, k));
+              const [x, y] = stopAt(unit.mission.id - 1 + wpT(walk.length, k), k);
               const isCur = trail.current?.key === node.key;
               const locked = !node.available;
               const fill = node.done ? '#b8934a' : locked ? '#1c1810' : isCur ? color : '#3a3222';
@@ -255,7 +253,7 @@ export default function Trail() {
         {trail.current && trail.current.kind !== 'story' && (() => {
           const u = trail.units.find((x) => x.mission.id === trail.current.mission.id);
           const cur = trail.current;
-          const [x, y] = cur.kind === 'boss' ? [LOCS[u.mission.id].x, LOCS[u.mission.id].y - 90] : pointAt(stepP(u, cur));
+          const [x, y] = cur.kind === 'boss' ? [LOCS[u.mission.id].x, LOCS[u.mission.id].y - 90] : stepPos(u, cur);
           return (
             <motion.button
               onClick={() => go(cur)}
@@ -275,7 +273,7 @@ export default function Trail() {
             const { node, unit } = popup;
             const walk = unit.nodes.filter((n) => n.kind !== 'boss' && n.kind !== 'story');
             const k = walk.findIndex((n) => n.key === node.key);
-            const [x, y] = pointAt(unit.mission.id - 1 + wpT(walk.length, k));
+            const [x, y] = stopAt(unit.mission.id - 1 + wpT(walk.length, k), k);
             const locked = !node.available;
             return (
               <>

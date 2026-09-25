@@ -1,6 +1,6 @@
 // O Tomo dos Feitiços: a biblioteca medieval com a história de cada magia, o método passo a passo e demonstrações animadas.
 import { useEffect, useMemo, useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ArrowLeft, ArrowRight, BookOpen, Library, Lock, Pause, Play, RotateCcw, ScrollText, SkipBack, SkipForward, X, Feather, Sigma, Droplet } from 'lucide-react';
 import { useProfile } from '../store/useGame';
@@ -180,14 +180,15 @@ export default function Tome() {
   const lesson = mission?.lessons.find((x) => x.id === Number(conceptId));
   const entry = mission && lesson ? tomeOf(mission.id, lesson.id) : null;
   const [wide, setWide] = useState(() => typeof window !== 'undefined' && window.innerWidth >= 900);
-  const [view, setView] = useState(0);
+  const [params] = useSearchParams();
+  const [view, setView] = useState(() => Math.max(0, Number(params.get('p')) || 0)); // ?p=1 abre direto numa página
   const [dir, setDir] = useState(1);
   useEffect(() => {
     const on = () => setWide(window.innerWidth >= 900);
     window.addEventListener('resize', on);
     return () => window.removeEventListener('resize', on);
   }, []);
-  useEffect(() => { setView(0); }, [missionId, conceptId]);
+  useEffect(() => { setView(Math.max(0, Number(params.get('p')) || 0)); }, [missionId, conceptId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const idxAll = ALL.findIndex((x) => x.mission === Number(missionId) && x.concept === Number(conceptId));
   const prev = ALL[idxAll - 1], next = ALL[idxAll + 1];

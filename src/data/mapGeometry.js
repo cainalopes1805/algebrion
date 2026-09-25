@@ -37,11 +37,35 @@ export const bez = (s, t) => {
   return [f(0), f(1)];
 };
 
-// p ∈ [0, 7]: parte inteira = segmento, fração = posição no segmento
+// Comprimento acumulado de cada trecho: paradas e herói se distribuem pelo COMPRIMENTO da estrada (e não pelo parâmetro da curva, que amontoa pontos)
+const LUT = SEGS.map((sg) => {
+  const N = 160, arr = [{ t: 0, len: 0 }];
+  let prev = bez(sg, 0), acc = 0;
+  for (let k = 1; k <= N; k++) { const pt = bez(sg, k / N); acc += Math.hypot(pt[0] - prev[0], pt[1] - prev[1]); arr.push({ t: k / N, len: acc }); prev = pt; }
+  return { arr, total: acc };
+});
+const tAtFraction = (i, f) => {
+  const { arr, total } = LUT[i];
+  const target = Math.max(0, Math.min(1, f)) * total;
+  let lo = 0, hi = arr.length - 1;
+  while (hi - lo > 1) { const mid = (lo + hi) >> 1; if (arr[mid].len < target) lo = mid; else hi = mid; }
+  const a = arr[lo], b = arr[hi];
+  return b.len === a.len ? a.t : a.t + ((target - a.len) / (b.len - a.len)) * (b.t - a.t);
+};
+
+// p ∈ [0, 7]: parte inteira = segmento, fração = fração do comprimento do trecho
 export const pointAt = (p) => {
   const c = Math.max(0, Math.min(SEGS.length, p));
   const i = Math.min(SEGS.length - 1, Math.floor(c));
-  return bez(SEGS[i], c - i);
+  return bez(SEGS[i], tAtFraction(i, c - i));
+};
+
+// Parada k do trecho: fica na estrada, mas alternando um pouco para cada lado, o que abre mais espaço entre paradas vizinhas
+export const stopAt = (p, k, off = 8) => {
+  const [x, y] = pointAt(p), [x2, y2] = pointAt(p + 0.004);
+  const ang = Math.atan2(y2 - y, x2 - x) + Math.PI / 2;
+  const side = k % 2 ? 1 : -1;
+  return [x + Math.cos(ang) * off * side, y + Math.sin(ang) * off * side];
 };
 
 const roadSamples = SEGS.flatMap((s) => Array.from({ length: 40 }, (_, k) => bez(s, k / 39)));
@@ -294,7 +318,7 @@ export function buildLife(decor) {
 
 
 // posição (0..1 dentro do trecho) da k-ésima de K paradas — afastadas dos marcos
-export const wpT = (K, k) => 0.17 + 0.62 * (K <= 1 ? 0.5 : k / (K - 1));
+export const wpT = (K, k) => 0.14 + 0.72 * (K <= 1 ? 0.5 : k / (K - 1));
 
 export const REGION_LABELS = [
   { x: 372, a: 'end', y: 2735, t: L('Floresta Sussurrante', 'Whispering Forest', 'Bosque Susurrante', 'Forêt Murmurante') },
